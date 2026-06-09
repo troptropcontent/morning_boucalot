@@ -1,19 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html data-theme="light">
   <head>
-    <title>CodespacesTryRails</title>
+    <title>Photolog</title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
-
     <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= hotwire_livereload_tags if Rails.env.development? %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="bg-base-200 min-h-screen">
+    <nav class="navbar bg-base-100 shadow-sm px-4">
+      <div class="flex-1">
+        <%= link_to "Photolog", root_path, class: "text-xl font-bold" %>
+      </div>
+      <div class="flex-none gap-2">
+        <% if authenticated? %>
+          <%= link_to "Photos", photos_path, class: "btn btn-ghost btn-sm" %>
+          <%= link_to "Albums", albums_path, class: "btn btn-ghost btn-sm" %>
+          <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-ghost btn-sm" %>
+        <% end %>
+      </div>
+    </nav>
+
+    <% if notice.present? %>
+      <div id="flash" class="container mx-auto px-4 mt-4">
+        <div role="alert" class="alert alert-success"><%= notice %></div>
+      </div>
+    <% end %>
+    <% if alert.present? %>
+      <div id="flash" class="container mx-auto px-4 mt-4">
+        <div role="alert" class="alert alert-error"><%= alert %></div>
+      </div>
+    <% end %>
+
+    <main class="container mx-auto px-4 py-6">
       <%= yield %>
     </main>
   </body>
