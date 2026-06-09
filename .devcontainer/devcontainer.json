@@ -1,13 +1,18 @@
 {
   "image": "mcr.microsoft.com/devcontainers/ruby:4.0",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    }
+  },
   "hostRequirements": {
     "cpus": 4
   },
   "waitFor": "onCreateCommand",
-  "updateContentCommand": "bundle install",
-  "postCreateCommand": "",
+  "updateContentCommand": "bundle install && npm install",
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
   "postAttachCommand": {
-    "server": "rails server"
+    "server": "bin/dev"
   },
   "customizations": {
     "codespaces": {

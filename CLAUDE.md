@@ -15,9 +15,10 @@ Build it as if it will be used by millions, even though it's a solo app for now.
 ## Commands
 
 ```bash
-bin/rails s              # start dev server
+bin/dev                  # start dev server (Rails + Tailwind watcher)
 bin/rails db:migrate     # run pending migrations
 bin/rails db:reset       # drop, create, migrate, seed
+bundle exec rspec        # run tests
 ```
 
 ## Features
