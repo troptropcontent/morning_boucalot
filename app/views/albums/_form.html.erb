@@ -1,0 +1,16 @@
+<%= form_with model: album do |f| %>
+  <div class="form-control mb-4">
+    <%= f.label :title, class: "label" %>
+    <%= f.text_field :title, class: "input input-bordered w-full", required: true %>
+  </div>
+
+  <div class="form-control mb-6">
+    <%= f.label :description, class: "label" %>
+    <%= f.text_area :description, rows: 3, class: "textarea textarea-bordered w-full" %>
+  </div>
+
+  <div class="flex gap-2">
+    <%= f.submit class: "btn btn-primary" %>
+    <%= link_to "Cancel", albums_path, class: "btn btn-ghost" %>
+  </div>
+<% end %>
