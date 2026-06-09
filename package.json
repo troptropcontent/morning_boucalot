@@ -1,0 +1,7 @@
+{
+  "name": "morning_boucalot",
+  "type": "commonjs",
+  "dependencies": {
+    "daisyui": "^5.5.23"
+  }
+}
