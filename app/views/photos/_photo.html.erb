@@ -1,0 +1,11 @@
+<%= link_to photo_path(photo) do %>
+  <div class="aspect-square overflow-hidden rounded-lg bg-base-300 hover:opacity-90 transition-opacity">
+    <% if photo.file.attached? %>
+      <%= image_tag photo.thumbnail, class: "w-full h-full object-cover" %>
+    <% else %>
+      <div class="w-full h-full flex items-center justify-center text-base-content/30">
+        No image
+      </div>
+    <% end %>
+  </div>
+<% end %>
