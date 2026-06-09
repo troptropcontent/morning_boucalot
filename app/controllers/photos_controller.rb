@@ -2,7 +2,7 @@ class PhotosController < ApplicationController
   before_action :set_photo, only: %i[show edit update destroy]
 
   def index
-    @photos = Current.user.photos.with_attached_file.recent
+    @pagy, @photos = pagy(Current.user.photos.with_attached_file.recent, limit: 30)
   end
 
   def show

@@ -2,7 +2,7 @@ class AlbumsController < ApplicationController
   before_action :set_album, only: %i[show edit update destroy]
 
   def index
-    @albums = Current.user.albums.includes(:cover_photo).order(:title)
+    @pagy, @albums = pagy(Current.user.albums.includes(:cover_photo).order(:title), limit: 24)
   end
 
   def show
