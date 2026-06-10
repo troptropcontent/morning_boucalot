@@ -79,4 +79,8 @@ Rails.application.configure do
   config.hosts << "localhost:3000"
 
   config.action_cable.allowed_request_origins = ["https://#{pf_host}", "http://localhost:3000"]
+
+  # Origin header may be localhost when accessing via Codespaces port-forwarding proxy.
+  # CSRF token check still protects against forgery.
+  config.action_controller.forgery_protection_origin_check = false
 end

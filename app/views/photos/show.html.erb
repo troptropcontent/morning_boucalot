@@ -5,7 +5,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2">
     <% if @photo.file.attached? %>
-      <%= image_tag @photo.medium, class: "rounded-lg w-full" %>
+      <%= image_tag @photo.large, class: "rounded-lg w-full" %>
     <% end %>
   </div>
 
