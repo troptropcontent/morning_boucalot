@@ -1,0 +1,30 @@
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center gap-4 mb-6">
+    <%= link_to "← Photos", photos_path, class: "text-sm text-base-content/60 hover:text-base-content" %>
+    <h1 class="text-2xl font-bold">Bulk Upload</h1>
+  </div>
+
+  <div data-controller="bulk-upload">
+    <div data-bulk-upload-target="dropzone"
+         data-action="dragover->bulk-upload#dragover dragleave->bulk-upload#dragleave drop->bulk-upload#drop"
+         class="border-2 border-dashed border-base-300 rounded-xl p-16 text-center cursor-default transition-colors">
+      <p class="text-5xl mb-4">🖼</p>
+      <p class="text-base-content/60 mb-6">Drag and drop photos here</p>
+      <label class="btn btn-primary cursor-pointer">
+        Select Files
+        <input type="file" multiple accept="image/*" class="sr-only"
+               data-bulk-upload-target="input"
+               data-action="change->bulk-upload#filesSelected" />
+      </label>
+    </div>
+
+    <div data-bulk-upload-target="queue"
+         class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mt-6">
+    </div>
+
+    <div data-bulk-upload-target="summary" class="hidden text-center mt-8 space-y-2">
+      <p class="text-base-content/60" data-bulk-upload-target="summaryText"></p>
+      <%= link_to "View all photos →", photos_path, class: "btn btn-primary" %>
+    </div>
+  </div>
+</div>

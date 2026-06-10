@@ -12,15 +12,24 @@ class PhotosController < ApplicationController
     @photo = Photo.new
   end
 
+  def upload
+  end
+
   def create
     result = UploadPhoto.call(user: Current.user, params: photo_params)
 
-    if result.success?
-      redirect_to result.data, notice: "Photo uploaded."
-    else
-      @photo = Photo.new
-      flash.now[:alert] = result.errors.join(", ")
-      render :new, status: :unprocessable_entity
+    respond_to do |format|
+      if result.success?
+        format.html { redirect_to result.data, notice: "Photo uploaded." }
+        format.json { render json: { id: result.data.id }, status: :created }
+      else
+        format.html do
+          @photo = Photo.new
+          flash.now[:alert] = result.errors.join(", ")
+          render :new, status: :unprocessable_entity
+        end
+        format.json { render json: { errors: result.errors }, status: :unprocessable_entity }
+      end
     end
   end
 
