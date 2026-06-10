@@ -7,8 +7,5 @@ Rails.application.routes.draw do
       get :upload
     end
   end
-  resources :albums
-  resources :album_photos, only: %i[create destroy]
-
-  root "photos#index"
+root "photos#index"
 end

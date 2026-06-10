@@ -27,11 +27,6 @@ bundle exec rspec        # run tests
 - Upload, view, edit, delete photos
 - Store EXIF metadata (date taken, camera model, focal length)
 
-### Albums
-- Create, edit, delete albums
-- Add and remove photos from albums
-- Albums have a cover photo
-
 ## Conventions
 
 - Prefer Turbo Frames and Turbo Streams over full-page renders for CRUD actions

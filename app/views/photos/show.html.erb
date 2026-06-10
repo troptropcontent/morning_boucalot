@@ -60,25 +60,6 @@
 
     <div class="divider"></div>
 
-    <% user_albums = Current.user.albums.order(:title) %>
-    <% if user_albums.any? %>
-      <div class="divider"></div>
-      <div>
-        <p class="text-sm font-medium mb-2">Add to album</p>
-        <% user_albums.each do |album| %>
-          <% unless @photo.albums.include?(album) %>
-            <%= button_to album_photos_path, method: :post,
-                params: { album_id: album.id, photo_id: @photo.id },
-                class: "btn btn-xs btn-outline mb-1 mr-1" do %>
-              + <%= album.title %>
-            <% end %>
-          <% end %>
-        <% end %>
-      </div>
-    <% end %>
-
-    <div class="divider"></div>
-
     <div class="flex gap-2">
       <%= link_to "Edit", edit_photo_path(@photo), class: "btn btn-outline btn-sm" %>
       <% if @photo.file.attached? %>

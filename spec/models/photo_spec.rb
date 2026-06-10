@@ -5,8 +5,6 @@ RSpec.describe Photo, type: :model do
 
   describe "associations" do
     it { is_expected.to belong_to(:user) }
-    it { is_expected.to have_many(:album_photos).dependent(:destroy) }
-    it { is_expected.to have_many(:albums).through(:album_photos) }
   end
 
   describe "validations" do
