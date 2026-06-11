@@ -1,7 +1,4 @@
-<div class="flex justify-between items-center mb-6">
-  <h1 class="text-2xl font-bold">Photos</h1>
-  <%= link_to "Upload Photos", upload_photos_path, class: "btn btn-primary btn-sm" %>
-</div>
+<p class="text-sm text-base-content/50 mb-6"><%= @pagy.count %> photo<%= "s" unless @pagy.count == 1 %></p>
 
 <% if @photos.empty? %>
   <div class="text-center py-20 text-base-content/50">
@@ -9,11 +6,18 @@
     <%= link_to "Upload your first photo", upload_photos_path, class: "link link-primary" %>
   </div>
 <% else %>
-  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-    <% @photos.each do |photo| %>
-      <%= render "photo", photo: photo %>
-    <% end %>
-  </div>
+  <% @photos.group_by { |p| (p.taken_at || p.created_at).beginning_of_month }.each do |month, photos| %>
+    <div class="mb-8">
+      <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
+        <%= month.strftime("%B %Y") %>
+      </h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
+        <% photos.each do |photo| %>
+          <%= render "photo", photo: photo %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <% if @pagy.pages > 1 %>
     <div class="flex justify-center mt-8">

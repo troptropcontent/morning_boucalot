@@ -1,0 +1,61 @@
+<div class="space-y-4">
+  <div>
+    <h1 class="text-2xl font-bold"><%= photo.title.presence || "Untitled" %></h1>
+    <% if photo.description.present? %>
+      <p class="text-base-content/70 mt-1"><%= photo.description %></p>
+    <% end %>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="space-y-2 text-sm">
+    <% if photo.taken_at %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">Date taken</span>
+        <span><%= photo.taken_at.strftime("%B %-d, %Y") %></span>
+      </div>
+    <% end %>
+    <% if photo.camera_model %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">Camera</span>
+        <span><%= photo.camera_model %></span>
+      </div>
+    <% end %>
+    <% if photo.focal_length %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">Focal length</span>
+        <span><%= photo.focal_length.to_i %>mm</span>
+      </div>
+    <% end %>
+    <% if photo.aperture %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">Aperture</span>
+        <span>f/<%= photo.aperture %></span>
+      </div>
+    <% end %>
+    <% if photo.shutter_speed %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">Shutter speed</span>
+        <span><%= photo.shutter_speed %></span>
+      </div>
+    <% end %>
+    <% if photo.iso %>
+      <div class="flex justify-between">
+        <span class="text-base-content/60">ISO</span>
+        <span><%= photo.iso %></span>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="flex gap-2">
+    <%= link_to "Edit", edit_photo_path(photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
+    <% if photo.file.attached? %>
+      <%= link_to "Download", rails_blob_path(photo.file, disposition: "attachment"), class: "btn btn-outline btn-sm" %>
+    <% end %>
+    <%= button_to "Delete", photo_path(photo), method: :delete,
+        data: { turbo_confirm: "Delete this photo?" },
+        class: "btn btn-error btn-sm" %>
+  </div>
+</div>

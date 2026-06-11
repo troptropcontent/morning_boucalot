@@ -27,6 +27,12 @@ bundle exec rspec        # run tests
 - Upload, view, edit, delete photos
 - Store EXIF metadata (date taken, camera model, focal length)
 
+## Design
+
+- **Mobile-first**: the primary device is a phone. Design for small screens first, enhance for larger ones.
+- Touch targets should be large enough to tap comfortably.
+- Avoid hover-only interactions for core functionality.
+
 ## Conventions
 
 - Prefer Turbo Frames and Turbo Streams over full-page renders for CRUD actions

@@ -1,0 +1,15 @@
+<div class="mb-4">
+  <%= link_to "← Back to photos", photos_path, class: "link link-primary text-sm" %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <% if photo.file.attached? %>
+      <%= image_tag photo.large, class: "rounded-lg w-full" %>
+    <% end %>
+  </div>
+
+  <%= turbo_frame_tag "photo_details" do %>
+    <%= yield %>
+  <% end %>
+</div>

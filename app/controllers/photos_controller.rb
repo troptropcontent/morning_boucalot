@@ -39,11 +39,21 @@ class PhotosController < ApplicationController
   def update
     result = UpdatePhoto.call(photo: @photo, params: photo_params)
 
-    if result.success?
-      redirect_to @photo, notice: "Photo updated."
-    else
-      flash.now[:alert] = result.errors.join(", ")
-      render :edit, status: :unprocessable_entity
+    respond_to do |format|
+      if result.success?
+        format.turbo_stream do
+          render turbo_stream: [
+            turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo }),
+            turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: "Photo updated.", alert: nil })
+          ]
+        end
+        format.html { redirect_to @photo, notice: "Photo updated." }
+      else
+        format.html do
+          flash.now[:alert] = result.errors.join(", ")
+          render :edit, status: :unprocessable_entity
+        end
+      end
     end
   end
 

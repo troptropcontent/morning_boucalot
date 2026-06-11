@@ -1,0 +1,6 @@
+<% if notice.present? %>
+  <div role="alert" class="alert alert-success" data-controller="toast"><%= notice %></div>
+<% end %>
+<% if alert.present? %>
+  <div role="alert" class="alert alert-error" data-controller="toast"><%= alert %></div>
+<% end %>
