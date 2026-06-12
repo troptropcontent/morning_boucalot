@@ -3,7 +3,8 @@
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "lts"
-    }
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker": {"moby": false}
   },
   "hostRequirements": {
     "cpus": 4
