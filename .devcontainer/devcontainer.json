@@ -12,9 +12,6 @@
   "waitFor": "onCreateCommand",
   "updateContentCommand": "bundle install && npm install",
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  "postAttachCommand": {
-    "server": "bin/dev"
-  },
   "customizations": {
     "codespaces": {
       "openFiles": [
@@ -29,8 +26,7 @@
   },
   "portsAttributes": {
     "3000": {
-      "label": "Application",
-      "onAutoForward": "openPreview"
+      "label": "Application"
     }
   },
   "forwardPorts": [3000]
