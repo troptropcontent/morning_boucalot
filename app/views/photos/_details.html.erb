@@ -52,7 +52,32 @@
   <div class="flex gap-2">
     <%= link_to "Edit", edit_photo_path(photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
     <% if photo.file.attached? %>
-      <%= link_to "Download", rails_blob_path(photo.file, disposition: "attachment"), class: "btn btn-outline btn-sm" %>
+      <div class="dropdown">
+        <div tabindex="0" role="button" class="btn btn-outline btn-sm">
+          Download
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-52 p-2 shadow-lg">
+          <li>
+            <%= link_to rails_blob_path(photo.file, disposition: "attachment") do %>
+              <div>
+                <span class="font-medium">Original HD</span>
+                <span class="text-xs text-base-content/60 block">Full resolution file</span>
+              </div>
+            <% end %>
+          </li>
+          <li>
+            <%= link_to rails_representation_path(photo.large, disposition: "attachment") do %>
+              <div>
+                <span class="font-medium">Web / Social</span>
+                <span class="text-xs text-base-content/60 block">Optimised, up to 2400px</span>
+              </div>
+            <% end %>
+          </li>
+        </ul>
+      </div>
     <% end %>
     <%= button_to "Delete", photo_path(photo), method: :delete,
         data: { turbo_confirm: "Delete this photo?" },
