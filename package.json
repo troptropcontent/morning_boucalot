@@ -3,5 +3,26 @@
   "type": "commonjs",
   "dependencies": {
     "daisyui": "^5.5.23"
-  }
+  },
+  "version": "1.0.0",
+  "description": "Welcome to your shiny new Codespace running Rails! We've got everything fired up and running for you to explore Rails.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/troptropcontent/morning_boucalot.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/troptropcontent/morning_boucalot/issues"
+  },
+  "homepage": "https://github.com/troptropcontent/morning_boucalot#readme"
 }
