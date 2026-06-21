@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html data-theme="light">
+  <head>
+    <title>Photolog</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <%= hotwire_livereload_tags if Rails.env.development? %>
+  </head>
+
+  <body class="bg-base-200 min-h-screen flex flex-col items-center justify-center px-4">
+    <div id="flash" class="toast toast-bottom toast-center z-50">
+      <%= render "layouts/flash" %>
+    </div>
+
+    <%= yield %>
+  </body>
+</html>
