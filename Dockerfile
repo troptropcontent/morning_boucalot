@@ -60,7 +60,7 @@ RUN groupadd --system --gid 1000 rails && \
 USER 1000:1000
 
 # Entrypoint prepares the database
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
+ENTRYPOINT ["/bin/bash", "/rails/bin/docker-entrypoint"]
 
 EXPOSE 3000
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
