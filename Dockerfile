@@ -57,12 +57,12 @@ RUN groupadd --system --gid 1000 rails && \
     useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
     chown -R rails:rails db log storage tmp
 
-RUN ["chmod", "+x", "/rails/bin/docker-entrypoint"]
+RUN ["chmod", "+x", "/rails/bin/docker-entrypoint.sh"]
 
 USER 1000:1000
 
 # Entrypoint prepares the database
-ENTRYPOINT ["/bin/bash", "/rails/bin/docker-entrypoint"]
+ENTRYPOINT ["/rails/bin/docker-entrypoint.sh"]
 
 EXPOSE 3000
 CMD ["./bin/rails", "server", "-b", "0.0.0.0"]
