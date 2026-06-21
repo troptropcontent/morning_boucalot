@@ -16,6 +16,9 @@ proxy:
   host: morningboucalot.thepocman.com
   app_port: 3000
 
+ssh:
+  user: ubuntu
+
 # Credentials for your image host.
 registry:
   username: troptropcontent
