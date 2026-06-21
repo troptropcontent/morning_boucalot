@@ -49,3 +49,4 @@ asset_path: /rails/public/assets
 # Aliases are triggered with "bin/kamal <alias>".
 aliases:
   shell: app exec --interactive --reuse "bash"
+  console: app exec --interactive --reuse "bin/rails console"
