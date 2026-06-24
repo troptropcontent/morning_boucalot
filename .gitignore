@@ -40,6 +40,9 @@ dump.rdb
 !/app/assets/builds/.keep
 
 /node_modules/*
+/e2e/node_modules/
+/e2e/playwright-report/
+/e2e/test-results/
 # Ignore key files for decrypting credentials and more.
 /config/credentials/*.key
 
