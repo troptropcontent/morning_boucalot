@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces/morning_boucalot:cached
+    command: sleep infinity
+    environment:
+      PLAYWRIGHT_WS_ENDPOINT: ws://chromium:3001
+
+  chromium:
+    image: mcr.microsoft.com/playwright:v1.53.0-noble
+    command: npx playwright run-server --port 3001 --host 0.0.0.0
+    expose:
+      - "3001"

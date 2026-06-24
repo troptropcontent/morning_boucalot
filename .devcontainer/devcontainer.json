@@ -1,17 +1,20 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/ruby:4.0",
+  "name": "morning_boucalot",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/morning_boucalot",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
-    },
-    "ghcr.io/devcontainers/features/docker-in-docker": {"moby": false}
+    "ghcr.io/devcontainers/features/docker-in-docker": { "moby": false },
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
+  "mounts": [
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=bind,consistency=cached"
+  ],
   "hostRequirements": {
     "cpus": 4
   },
   "waitFor": "onCreateCommand",
-  "updateContentCommand": "bundle install && npm install",
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "updateContentCommand": "bundle install && npm install && cd e2e && npm install",
   "customizations": {
     "codespaces": {
       "openFiles": [
@@ -20,7 +23,8 @@
     },
     "vscode": {
       "extensions": [
-        "Shopify.ruby-lsp"
+        "Shopify.ruby-lsp",
+        "ms-playwright.playwright"
       ]
     }
   },
