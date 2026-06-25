@@ -6,6 +6,10 @@ class PhotosController < ApplicationController
   end
 
   def show
+    photo_ids = Current.user.photos.recent.ids
+    idx = photo_ids.index(@photo.id)
+    @prev_photo_id = photo_ids[idx - 1] if idx&.positive?
+    @next_photo_id = photo_ids[idx + 1] if idx && idx < photo_ids.length - 1
   end
 
   def new

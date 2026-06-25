@@ -36,6 +36,30 @@ RSpec.describe "Photos", type: :request do
       get photo_path(other_photo)
       expect(response).to have_http_status(:not_found)
     end
+
+    context "with adjacent photos" do
+      let!(:older_photo)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago) }
+      let!(:middle_photo) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago) }
+      let!(:newer_photo)  { FactoryBot.create(:photo, user: user, taken_at: Time.current) }
+
+      it "shows both arrows for a middle photo" do
+        get photo_path(middle_photo)
+        expect(response.body).to include(photo_path(newer_photo))
+        expect(response.body).to include(photo_path(older_photo))
+      end
+
+      it "shows no prev arrow for the newest photo" do
+        get photo_path(newer_photo)
+        expect(response.body).not_to include("Previous photo")
+        expect(response.body).to include(photo_path(middle_photo))
+      end
+
+      it "shows no next arrow for the oldest photo" do
+        get photo_path(older_photo)
+        expect(response.body).to include(photo_path(middle_photo))
+        expect(response.body).not_to include("Next photo")
+      end
+    end
   end
 
   describe "POST /photos" do

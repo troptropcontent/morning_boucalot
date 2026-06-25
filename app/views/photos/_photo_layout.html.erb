@@ -3,9 +3,27 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <div class="lg:col-span-2">
+  <div class="lg:col-span-2 relative">
     <% if photo.file.attached? %>
       <%= image_tag photo.large, class: "rounded-lg w-full" %>
+    <% end %>
+    <% if local_assigns[:prev_photo_id] %>
+      <%= link_to photo_path(prev_photo_id), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
+        <div class="bg-black/40 rounded-full p-3 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </div>
+      <% end %>
+    <% end %>
+    <% if local_assigns[:next_photo_id] %>
+      <%= link_to photo_path(next_photo_id), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
+        <div class="bg-black/40 rounded-full p-3 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      <% end %>
     <% end %>
   </div>
 
