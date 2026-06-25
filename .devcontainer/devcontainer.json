@@ -7,14 +7,14 @@
     "ghcr.io/devcontainers/features/docker-in-docker": { "moby": false },
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
   },
-  "mounts": [
-    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
-  ],
   "hostRequirements": {
     "cpus": 4
   },
   "waitFor": "onCreateCommand",
   "updateContentCommand": "bundle install && npm install && cd e2e && npm install",
+  "mounts": [
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
+  ],
   "customizations": {
     "codespaces": {
       "openFiles": [

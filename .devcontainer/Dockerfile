@@ -10,4 +10,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
     rm -rf /var/lib/apt/lists/*
 
 # Install kamal for deployments
-RUN gem install kamal
+RUN gem install kamal && chmod -R g+w /usr/local/rvm/gems/default
+
+# Pre-create .claude dir so the devcontainer volume mount initializes with correct ownership
+RUN mkdir -p /home/vscode/.claude && chown -R vscode:vscode /home/vscode/.claude
