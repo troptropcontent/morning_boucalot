@@ -1,12 +1,15 @@
 class PhotosController < ApplicationController
+  before_action :set_owner
+  before_action :require_owner!, only: %i[new upload create edit update destroy]
   before_action :set_photo, only: %i[show edit update destroy]
+  allow_unauthenticated_access only: %i[index show]
 
   def index
-    @pagy, @photos = pagy(Current.user.photos.with_attached_file.recent, limit: 30)
+    @pagy, @photos = pagy(@owner.photos.with_attached_file.recent, limit: 30)
   end
 
   def show
-    photo_ids = Current.user.photos.recent.ids
+    photo_ids = @owner.photos.recent.ids
     idx = photo_ids.index(@photo.id)
     @prev_photo_id = photo_ids[idx - 1] if idx&.positive?
     @next_photo_id = photo_ids[idx + 1] if idx && idx < photo_ids.length - 1
@@ -24,7 +27,7 @@ class PhotosController < ApplicationController
 
     respond_to do |format|
       if result.success?
-        format.html { redirect_to result.data, notice: "Photo uploaded." }
+        format.html { redirect_to user_photo_path(@owner, result.data), notice: "Photo uploaded." }
         format.json { render json: { id: result.data.id }, status: :created }
       else
         format.html do
@@ -51,7 +54,7 @@ class PhotosController < ApplicationController
             turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: "Photo updated.", alert: nil })
           ]
         end
-        format.html { redirect_to @photo, notice: "Photo updated." }
+        format.html { redirect_to user_photo_path(@owner, @photo), notice: "Photo updated." }
       else
         format.html do
           flash.now[:alert] = result.errors.join(", ")
@@ -63,13 +66,21 @@ class PhotosController < ApplicationController
 
   def destroy
     DeletePhoto.call(photo: @photo)
-    redirect_to photos_path, notice: "Photo deleted."
+    redirect_to user_photos_path(@owner), notice: "Photo deleted."
   end
 
   private
 
+  def set_owner
+    @owner = User.find(params[:user_id])
+  end
+
   def set_photo
-    @photo = Current.user.photos.find(params[:id])
+    @photo = @owner.photos.find(params[:id])
+  end
+
+  def require_owner!
+    head :forbidden unless Current.user == @owner
   end
 
   def photo_params

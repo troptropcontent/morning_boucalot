@@ -1,6 +1,6 @@
 <%= render layout: "photos/photo_layout", locals: { photo: @photo } do %>
   <div class="space-y-4">
-    <%= form_with model: @photo, data: { turbo_action: "replace" } do |f| %>
+    <%= form_with model: @photo, url: user_photo_path(@owner, @photo), data: { turbo_action: "replace" } do |f| %>
       <div class="form-control">
         <%= f.label :title, class: "label" %>
         <%= f.text_field :title, class: "input input-bordered w-full", placeholder: "Optional title" %>
@@ -13,7 +13,7 @@
 
       <div class="flex gap-2 pt-2">
         <%= f.submit "Save", class: "btn btn-primary btn-sm" %>
-        <%= link_to "Cancel", photo_path(@photo), class: "btn btn-ghost btn-sm", data: { turbo_action: "replace" } %>
+        <%= link_to "Cancel", user_photo_path(@owner, @photo), class: "btn btn-ghost btn-sm", data: { turbo_action: "replace" } %>
       </div>
     <% end %>
   </div>

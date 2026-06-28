@@ -1,10 +1,10 @@
 <div class="max-w-5xl mx-auto">
   <div class="flex items-center gap-4 mb-6">
-    <%= link_to "← Photos", photos_path, class: "text-sm text-base-content/60 hover:text-base-content" %>
+    <%= link_to "← Photos", user_photos_path(@owner), class: "text-sm text-base-content/60 hover:text-base-content" %>
     <h1 class="text-2xl font-bold">Bulk Upload</h1>
   </div>
 
-  <div data-controller="bulk-upload">
+  <div data-controller="bulk-upload" data-bulk-upload-upload-url-value="<%= user_photos_path(@owner, format: :json) %>">
     <div data-bulk-upload-target="dropzone"
          data-action="dragover->bulk-upload#dragover dragleave->bulk-upload#dragleave drop->bulk-upload#drop"
          class="border-2 border-dashed border-base-300 rounded-xl p-16 text-center cursor-default transition-colors">
@@ -24,7 +24,7 @@
 
     <div data-bulk-upload-target="summary" class="hidden text-center mt-8 space-y-2">
       <p class="text-base-content/60" data-bulk-upload-target="summaryText"></p>
-      <%= link_to "View all photos →", photos_path, class: "btn btn-primary" %>
+      <%= link_to "View all photos →", user_photos_path(@owner), class: "btn btn-primary" %>
     </div>
   </div>
 </div>

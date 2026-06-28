@@ -3,11 +3,11 @@ require "rails_helper"
 RSpec.describe "Photos", type: :request do
   let(:user) { FactoryBot.create(:user) }
 
-  describe "GET /photos" do
+  describe "GET /:user_id/photos" do
     context "when not authenticated" do
-      it "redirects to sign in" do
-        get photos_path
-        expect(response).to redirect_to(new_session_path)
+      it "returns 200 for public access" do
+        get user_photos_path(user)
+        expect(response).to have_http_status(:ok)
       end
     end
 
@@ -15,25 +15,23 @@ RSpec.describe "Photos", type: :request do
       before { sign_in(user) }
 
       it "returns 200" do
-        get photos_path
+        get user_photos_path(user)
         expect(response).to have_http_status(:ok)
       end
     end
   end
 
-  describe "GET /photos/:id" do
+  describe "GET /:user_id/photos/:id" do
     let(:photo) { FactoryBot.create(:photo, user: user) }
 
-    before { sign_in(user) }
-
-    it "returns 200" do
-      get photo_path(photo)
+    it "returns 200 without authentication" do
+      get user_photo_path(user, photo)
       expect(response).to have_http_status(:ok)
     end
 
-    it "returns 404 for another user's photo" do
+    it "returns 404 for a photo belonging to a different user" do
       other_photo = FactoryBot.create(:photo)
-      get photo_path(other_photo)
+      get user_photo_path(user, other_photo)
       expect(response).to have_http_status(:not_found)
     end
 
@@ -43,26 +41,26 @@ RSpec.describe "Photos", type: :request do
       let!(:newer_photo)  { FactoryBot.create(:photo, user: user, taken_at: Time.current) }
 
       it "shows both arrows for a middle photo" do
-        get photo_path(middle_photo)
-        expect(response.body).to include(photo_path(newer_photo))
-        expect(response.body).to include(photo_path(older_photo))
+        get user_photo_path(user, middle_photo)
+        expect(response.body).to include(user_photo_path(user, newer_photo))
+        expect(response.body).to include(user_photo_path(user, older_photo))
       end
 
       it "shows no prev arrow for the newest photo" do
-        get photo_path(newer_photo)
+        get user_photo_path(user, newer_photo)
         expect(response.body).not_to include("Previous photo")
-        expect(response.body).to include(photo_path(middle_photo))
+        expect(response.body).to include(user_photo_path(user, middle_photo))
       end
 
       it "shows no next arrow for the oldest photo" do
-        get photo_path(older_photo)
-        expect(response.body).to include(photo_path(middle_photo))
+        get user_photo_path(user, older_photo)
+        expect(response.body).to include(user_photo_path(user, middle_photo))
         expect(response.body).not_to include("Next photo")
       end
     end
   end
 
-  describe "POST /photos" do
+  describe "POST /:user_id/photos" do
     before { sign_in(user) }
 
     let(:file) do
@@ -74,41 +72,47 @@ RSpec.describe "Photos", type: :request do
 
     it "creates a photo and redirects" do
       expect {
-        post photos_path, params: { photo: { file: file, title: "Sunset" } }
+        post user_photos_path(user), params: { photo: { file: file, title: "Sunset" } }
       }.to change(Photo, :count).by(1)
 
-      expect(response).to redirect_to(Photo.last)
+      expect(response).to redirect_to(user_photo_path(user, Photo.last))
     end
 
     it "renders new on failure" do
-      post photos_path, params: { photo: { title: "No file" } }
+      post user_photos_path(user), params: { photo: { title: "No file" } }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "returns 403 when posting to another user's scope" do
+      other_user = FactoryBot.create(:user)
+      post user_photos_path(other_user), params: { photo: { file: file, title: "Sunset" } }
+      expect(response).to have_http_status(:forbidden)
     end
   end
 
-  describe "PATCH /photos/:id" do
+  describe "PATCH /:user_id/photos/:id" do
     let(:photo) { FactoryBot.create(:photo, user: user) }
 
     before { sign_in(user) }
 
     it "updates and redirects" do
-      patch photo_path(photo), params: { photo: { title: "Updated" } }
-      expect(response).to redirect_to(photo)
+      patch user_photo_path(user, photo), params: { photo: { title: "Updated" } }
+      expect(response).to redirect_to(user_photo_path(user, photo))
       expect(photo.reload.title).to eq("Updated")
     end
   end
 
-  describe "DELETE /photos/:id" do
+  describe "DELETE /:user_id/photos/:id" do
     let!(:photo) { FactoryBot.create(:photo, user: user) }
 
     before { sign_in(user) }
 
     it "destroys the photo and redirects" do
       expect {
-        delete photo_path(photo)
+        delete user_photo_path(user, photo)
       }.to change(Photo, :count).by(-1)
 
-      expect(response).to redirect_to(photos_path)
+      expect(response).to redirect_to(user_photos_path(user))
     end
   end
 end

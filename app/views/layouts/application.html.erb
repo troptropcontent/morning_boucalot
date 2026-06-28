@@ -18,7 +18,7 @@
       </div>
       <% if authenticated? %>
         <div class="flex-none flex items-center gap-2">
-          <%= link_to upload_photos_path, class: "btn btn-primary btn-sm" do %>
+          <%= link_to upload_user_photos_path(Current.user), class: "btn btn-primary btn-sm" do %>
             + Upload
           <% end %>
           <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-ghost btn-sm" %>

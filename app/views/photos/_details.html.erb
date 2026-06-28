@@ -50,13 +50,12 @@
   <div class="divider"></div>
 
   <div class="flex gap-2">
-    <%= link_to "Edit", edit_photo_path(photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
     <% if photo.file.attached? %>
-      <div class="dropdown">
+      <div class="dropdown dropdown-top">
         <div tabindex="0" role="button" class="btn btn-outline btn-sm">
           Download
           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
           </svg>
         </div>
         <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-52 p-2 shadow-lg">
@@ -79,8 +78,11 @@
         </ul>
       </div>
     <% end %>
-    <%= button_to "Delete", photo_path(photo), method: :delete,
-        data: { turbo_confirm: "Delete this photo?" },
-        class: "btn btn-error btn-sm" %>
+    <% if authenticated? && Current.user == @owner %>
+      <%= link_to "Edit", edit_user_photo_path(@owner, photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
+      <%= button_to "Delete", user_photo_path(@owner, photo), method: :delete,
+          data: { turbo_confirm: "Delete this photo?" },
+          class: "btn btn-error btn-sm" %>
+    <% end %>
   </div>
 </div>

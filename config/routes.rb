@@ -4,10 +4,13 @@ Rails.application.routes.draw do
   resource :session
   resources :passwords, param: :token
 
-  resources :photos do
-    collection do
-      get :upload
+  scope "/:user_id", as: :user do
+    resources :photos do
+      collection do
+        get :upload
+      end
     end
   end
-root "photos#index"
+
+  root "home#index"
 end

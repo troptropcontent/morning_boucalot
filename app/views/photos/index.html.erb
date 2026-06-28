@@ -3,7 +3,9 @@
 <% if @photos.empty? %>
   <div class="text-center py-20 text-base-content/50">
     <p class="text-lg">No photos yet.</p>
-    <%= link_to "Upload your first photo", upload_photos_path, class: "link link-primary" %>
+    <% if authenticated? && Current.user == @owner %>
+      <%= link_to "Upload your first photo", upload_user_photos_path(@owner), class: "link link-primary" %>
+    <% end %>
   </div>
 <% else %>
   <% @photos.group_by { |p| (p.taken_at || p.created_at).beginning_of_month }.each do |month, photos| %>

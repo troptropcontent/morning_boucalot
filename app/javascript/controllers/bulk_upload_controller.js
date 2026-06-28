@@ -9,6 +9,7 @@ const STATUS = {
 
 export default class extends Controller {
   static targets = ["input", "dropzone", "queue", "summary", "summaryText"]
+  static values = { uploadUrl: String }
 
   connect() {
     this.files = []
@@ -99,7 +100,7 @@ export default class extends Controller {
   async upload(file) {
     const formData = new FormData()
     formData.append("photo[file]", file)
-    const response = await fetch("/photos.json", {
+    const response = await fetch(this.uploadUrlValue, {
       method: "POST",
       headers: { "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content },
       body: formData,

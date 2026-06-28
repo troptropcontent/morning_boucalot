@@ -1,4 +1,4 @@
-<%= link_to photo_path(photo), class: "block active:opacity-75 transition-opacity" do %>
+<%= link_to user_photo_path(@owner, photo), class: "block active:opacity-75 transition-opacity" do %>
   <div class="aspect-square overflow-hidden bg-base-300">
     <% if photo.file.attached? %>
       <%= image_tag photo.thumbnail, class: "w-full h-full object-cover" %>
