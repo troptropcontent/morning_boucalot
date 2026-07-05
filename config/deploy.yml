@@ -44,9 +44,10 @@ env:
     - S3_FORCE_PATH_STYLE
 
 # Bridge fingerprinted assets between versions to avoid 404s on in-flight requests.
-asset_path: /rails/public/assets
+# asset_path: /rails/public/assets
 
 # Aliases are triggered with "bin/kamal <alias>".
 aliases:
   shell: app exec --interactive --reuse "bash"
   console: app exec --interactive --reuse "bin/rails console"
+  logs: app logs -f
