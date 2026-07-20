@@ -73,6 +73,7 @@ export default class extends Controller {
     const count = this.selectedIds.size
     this.countTarget.textContent = `${count} photo${count === 1 ? "" : "s"} selected`
     this.toolbarTarget.classList.toggle("hidden", count === 0)
+    this.element.classList.toggle("pb-24", count > 0)
   }
 
   #clearAll() {
