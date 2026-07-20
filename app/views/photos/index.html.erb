@@ -1,29 +1,47 @@
-<p class="text-sm text-base-content/50 mb-6"><%= @pagy.count %> photo<%= "s" unless @pagy.count == 1 %></p>
+<turbo-frame id="photos-index" data-turbo-action="advance">
+  <% if @tags.any? %>
+    <div class="flex flex-wrap gap-2 mb-5">
+      <%= link_to "All", user_photos_path(@owner),
+          class: "badge badge-lg #{params[:tag].blank? ? 'badge-primary' : 'badge-ghost'}" %>
+      <% @tags.each do |tag| %>
+        <%= link_to tag.name, user_photos_path(@owner, tag: tag.name),
+            class: "badge badge-lg #{params[:tag] == tag.name ? 'badge-primary' : 'badge-ghost'}" %>
+      <% end %>
+    </div>
+  <% end %>
 
-<% if @photos.empty? %>
-  <div class="text-center py-20 text-base-content/50">
-    <p class="text-lg">No photos yet.</p>
-    <% if authenticated? && Current.user == @owner %>
-      <%= link_to "Upload your first photo", upload_user_photos_path(@owner), class: "link link-primary" %>
-    <% end %>
-  </div>
-<% else %>
-  <% @photos.group_by { |p| (p.taken_at || p.created_at).beginning_of_month }.each do |month, photos| %>
-    <div class="mb-8">
-      <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
-        <%= month.strftime("%B %Y") %>
-      </h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
-        <% photos.each do |photo| %>
-          <%= render "photo", photo: photo %>
+  <p class="text-sm text-base-content/50 mb-6"><%= @pagy.count %> photo<%= "s" unless @pagy.count == 1 %></p>
+
+  <% if @photos.empty? %>
+    <div class="text-center py-20 text-base-content/50">
+      <% if params[:tag].present? %>
+        <p class="text-lg">No photos tagged "<%= params[:tag] %>".</p>
+        <%= link_to "View all photos", user_photos_path(@owner), class: "link link-primary" %>
+      <% else %>
+        <p class="text-lg">No photos yet.</p>
+        <% if authenticated? && Current.user == @owner %>
+          <%= link_to "Upload your first photo", upload_user_photos_path(@owner), class: "link link-primary" %>
         <% end %>
+      <% end %>
+    </div>
+  <% else %>
+    <% @photos.group_by { |p| (p.taken_at || p.created_at).beginning_of_month }.each do |month, photos| %>
+      <div class="mb-8">
+        <h2 class="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
+          <%= month.strftime("%B %Y") %>
+        </h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1">
+          <% photos.each do |photo| %>
+            <%= render "photo", photo: photo %>
+          <% end %>
+        </div>
       </div>
-    </div>
-  <% end %>
+    <% end %>
 
-  <% if @pagy.pages > 1 %>
-    <div class="flex justify-center mt-8">
-      <%= pagy_nav(@pagy) %>
-    </div>
+    <% if @pagy.pages > 1 %>
+      <div class="flex justify-center mt-8">
+        <%= pagy_nav(@pagy) %>
+      </div>
+    <% end %>
   <% end %>
-<% end %>
+</turbo-frame>

@@ -5,7 +5,10 @@ class PhotosController < ApplicationController
   allow_unauthenticated_access only: %i[index show]
 
   def index
-    @pagy, @photos = pagy(@owner.photos.with_attached_file.recent, limit: 30)
+    photos = @owner.photos.with_attached_file.recent
+    photos = photos.tagged_with(params[:tag]) if params[:tag].present?
+    @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
+    @pagy, @photos = pagy(photos, limit: 30)
   end
 
   def show
