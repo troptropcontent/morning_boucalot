@@ -37,6 +37,16 @@ RSpec.describe UploadPhoto do
         expect(result.data.title).to eq("Sunset")
         expect(result.data.description).to eq("Beautiful")
       end
+
+      it "assigns tags from tag_list" do
+        result = UploadPhoto.call(user: user, params: { file: file, tag_list: "landscape, travel" })
+        expect(result.data.tags.map(&:name)).to contain_exactly("landscape", "travel")
+      end
+
+      it "creates photos without tags when tag_list is blank" do
+        result = UploadPhoto.call(user: user, params: { file: file, tag_list: "" })
+        expect(result.data.tags).to be_empty
+      end
     end
 
     context "without a file" do

@@ -5,7 +5,9 @@ class UpdatePhoto < ApplicationService
   end
 
   def call
-    fail!(@photo.errors.full_messages) unless @photo.update(title: @params[:title], description: @params[:description])
+    @photo.assign_attributes(title: @params[:title], description: @params[:description])
+    SyncPhotoTags.new(photo: @photo, tag_list: @params[:tag_list]).call if @params.key?(:tag_list)
+    fail!(@photo.errors.full_messages) unless @photo.save
 
     @photo
   end

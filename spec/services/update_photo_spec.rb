@@ -15,5 +15,22 @@ RSpec.describe UpdatePhoto do
       result = UpdatePhoto.call(photo: photo, params: { title: "Updated" })
       expect(result.data).to eq(photo)
     end
+
+    it "updates tags when tag_list is provided" do
+      result = UpdatePhoto.call(photo: photo, params: { title: "x", tag_list: "landscape, travel" })
+      expect(result.data.tags.map(&:name)).to contain_exactly("landscape", "travel")
+    end
+
+    it "replaces existing tags" do
+      SyncPhotoTags.call(photo: photo, tag_list: "old")
+      result = UpdatePhoto.call(photo: photo, params: { title: "x", tag_list: "new" })
+      expect(result.data.tags.map(&:name)).to eq([ "new" ])
+    end
+
+    it "does not touch tags when tag_list key is absent" do
+      SyncPhotoTags.call(photo: photo, tag_list: "landscape")
+      result = UpdatePhoto.call(photo: photo, params: { title: "x" })
+      expect(result.data.tags.map(&:name)).to eq([ "landscape" ])
+    end
   end
 end

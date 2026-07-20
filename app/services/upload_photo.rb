@@ -11,6 +11,7 @@ class UploadPhoto < ApplicationService
     photo = @user.photos.build(title: @params[:title], description: @params[:description])
     photo.file.attach(file)
     photo.file_size = file.size
+    SyncPhotoTags.new(photo: photo, tag_list: @params[:tag_list].to_s).call
 
     if jpeg?(file.content_type)
       exif = ExtractExifData.call(local_path(file))
