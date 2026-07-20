@@ -1,11 +1,28 @@
-<%= link_to user_photo_path(@owner, photo), class: "block active:opacity-75 transition-opacity" do %>
-  <div class="aspect-square overflow-hidden bg-base-300">
-    <% if photo.file.attached? %>
-      <%= image_tag photo.thumbnail, class: "w-full h-full object-cover" %>
-    <% else %>
-      <div class="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
-        No image
-      </div>
-    <% end %>
-  </div>
-<% end %>
+<div class="relative" data-photo-id="<%= photo.id %>">
+
+  <%# Selection overlay %>
+  <div class="select-overlay hidden absolute inset-0 z-10 bg-primary/25 pointer-events-none"></div>
+
+  <%# Select circle button — only for the owner %>
+  <% if authenticated? && Current.user == @owner %>
+    <button class="select-btn absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full border-2 border-white/70 bg-black/25 shadow flex items-center justify-center transition-colors"
+            data-action="click->photo-selection#toggleSelect"
+            aria-label="Select photo">
+      <svg class="select-check hidden w-4 h-4 text-primary-content" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+      </svg>
+    </button>
+  <% end %>
+
+  <%= link_to user_photo_path(@owner, photo), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
+    <div class="aspect-square overflow-hidden bg-base-300">
+      <% if photo.file.attached? %>
+        <%= image_tag photo.thumbnail, class: "w-full h-full object-cover" %>
+      <% else %>
+        <div class="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
+          No image
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
