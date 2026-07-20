@@ -1,6 +1,6 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy]
+  before_action :require_owner!, only: %i[new upload create edit update destroy batch]
   before_action :set_photo, only: %i[show edit update destroy]
   allow_unauthenticated_access only: %i[index show]
 
@@ -63,6 +63,27 @@ class PhotosController < ApplicationController
           flash.now[:alert] = result.errors.join(", ")
           render :edit, status: :unprocessable_entity
         end
+      end
+    end
+  end
+
+  def batch
+    result = BatchTagPhotos.call(
+      owner: @owner,
+      photo_ids: params[:photo_ids],
+      tag_list: params[:tag_list]
+    )
+
+    count = result.data&.count
+    respond_to do |format|
+      if result.success?
+        notice = "Tags added to #{count} photo#{"s" unless count == 1}."
+        format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: notice, alert: nil }) }
+        format.html { redirect_to user_photos_path(@owner), notice: notice }
+      else
+        alert = result.errors.join(", ")
+        format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: alert }) }
+        format.html { redirect_to user_photos_path(@owner), alert: alert }
       end
     end
   end

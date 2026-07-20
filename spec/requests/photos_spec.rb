@@ -115,4 +115,31 @@ RSpec.describe "Photos", type: :request do
       expect(response).to redirect_to(user_photos_path(user))
     end
   end
+
+  describe "PATCH /:user_id/photos/batch" do
+    let!(:photos) { FactoryBot.create_list(:photo, 2, user: user) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "adds tags to the selected photos and redirects" do
+        patch batch_user_photos_path(user), params: { photo_ids: photos.map(&:id), tag_list: "landscape" }
+        expect(response).to redirect_to(user_photos_path(user))
+        photos.each { |p| expect(p.reload.tags.map(&:name)).to include("landscape") }
+      end
+
+      it "returns 403 when targeting another user's scope" do
+        other_user = FactoryBot.create(:user)
+        patch batch_user_photos_path(other_user), params: { photo_ids: photos.map(&:id), tag_list: "landscape" }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when not authenticated" do
+      it "redirects to login" do
+        patch batch_user_photos_path(user), params: { photo_ids: photos.map(&:id), tag_list: "landscape" }
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
 end
