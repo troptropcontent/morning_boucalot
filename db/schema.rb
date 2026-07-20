@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_155543) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_151506) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -37,6 +37,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_155543) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "photo_tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "photo_id", null: false
+    t.integer "tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["photo_id", "tag_id"], name: "index_photo_tags_on_photo_id_and_tag_id", unique: true
+    t.index ["photo_id"], name: "index_photo_tags_on_photo_id"
+    t.index ["tag_id"], name: "index_photo_tags_on_tag_id"
   end
 
   create_table "photos", force: :cascade do |t|
@@ -66,6 +76,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_155543) do
     t.index ["user_id"], name: "index_sessions_on_user_id"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_tags_on_name", unique: true
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "email_address", null: false
@@ -76,6 +93,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_155543) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "photo_tags", "photos"
+  add_foreign_key "photo_tags", "tags"
   add_foreign_key "photos", "users"
   add_foreign_key "sessions", "users"
 end
