@@ -8,6 +8,7 @@ Rails.application.routes.draw do
     resources :photos do
       collection do
         get :upload
+        patch :batch
       end
     end
   end
