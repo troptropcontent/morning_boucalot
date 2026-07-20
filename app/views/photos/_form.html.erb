@@ -21,9 +21,15 @@
     <%= f.text_field :title, class: "input input-bordered w-full", placeholder: "Optional title" %>
   </div>
 
-  <div class="form-control mb-6">
+  <div class="form-control mb-4">
     <%= f.label :description, class: "label" %>
     <%= f.text_area :description, rows: 3, class: "textarea textarea-bordered w-full", placeholder: "Optional description" %>
+  </div>
+
+  <div class="form-control mb-6">
+    <%= f.label :tag_list, "Tags", class: "label" %>
+    <%= f.text_field :tag_list, class: "input input-bordered w-full", placeholder: "landscape, travel, portrait" %>
+    <p class="text-xs text-base-content/50 mt-1">Separate tags with commas</p>
   </div>
 
   <div class="flex gap-2">
