@@ -69,7 +69,7 @@
             <% end %>
           </li>
           <li>
-            <%= link_to rails_representation_path(photo.large, disposition: "attachment") do %>
+            <%= link_to rails_representation_path(photo.file.variant(:large), disposition: "attachment") do %>
               <div>
                 <span class="font-medium">Web / Social</span>
                 <span class="text-xs text-base-content/60 block">Optimised, up to 2400px</span>

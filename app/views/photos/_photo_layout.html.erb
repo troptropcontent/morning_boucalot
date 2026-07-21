@@ -5,7 +5,7 @@
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <div class="lg:col-span-2 relative">
     <% if photo.file.attached? %>
-      <%= image_tag photo.large, class: "rounded-lg w-full" %>
+      <%= image_tag photo.file.variant(:large), class: "rounded-lg w-full" %>
     <% end %>
     <% if local_assigns[:prev_photo_id] %>
       <%= link_to user_photo_path(@owner, prev_photo_id), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>

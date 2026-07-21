@@ -1,6 +1,10 @@
 class Photo < ApplicationRecord
   belongs_to :user
-  has_one_attached :file
+  has_one_attached :file do |attachable|
+    attachable.variant :thumbnail, resize_to_fill: [300, 300]
+    attachable.variant :medium, resize_to_limit: [800, 600]
+    attachable.variant :large, resize_to_limit: [2400, 2400]
+  end
   has_many :photo_tags, dependent: :destroy
   has_many :tags, through: :photo_tags
 
@@ -14,7 +18,5 @@ class Photo < ApplicationRecord
     tags.map(&:name).join(", ")
   end
 
-  def thumbnail = file.variant(resize_to_fill: [300, 300])
-  def medium = file.variant(resize_to_limit: [800, 600])
-  def large = file.variant(resize_to_limit: [2400, 2400])
+
 end

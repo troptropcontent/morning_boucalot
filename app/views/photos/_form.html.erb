@@ -5,7 +5,7 @@
     <%= f.label :file, "Photo", class: "label" %>
     <% if photo.file.attached? %>
       <div class="mb-2">
-        <%= image_tag photo.thumbnail, class: "rounded w-32 h-32 object-cover" %>
+        <%= image_tag photo.file.variant(:thumbnail), class: "rounded w-32 h-32 object-cover" %>
       </div>
     <% end %>
     <%= f.file_field :file, accept: "image/*",
