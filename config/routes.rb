@@ -12,6 +12,7 @@ Rails.application.routes.draw do
       collection do
         get :upload
         patch :batch
+        post :download_zip
       end
     end
   end

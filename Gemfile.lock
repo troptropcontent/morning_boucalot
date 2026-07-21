@@ -460,6 +460,7 @@ DEPENDENCIES
   puma (~> 6)
   rails (~> 8.1.0)
   rspec-rails (~> 7.0)
+  rubyzip
   selenium-webdriver
   shoulda-matchers
   solargraph

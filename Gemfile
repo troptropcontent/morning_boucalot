@@ -50,6 +50,9 @@ gem "tailwindcss-rails"
 # Use Active Storage variants
 gem "image_processing", "~> 1.2"
 
+# ZIP archive generation
+gem "rubyzip"
+
 # EXIF metadata extraction
 gem "exifr"
 

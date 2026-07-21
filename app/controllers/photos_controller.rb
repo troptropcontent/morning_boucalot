@@ -1,6 +1,6 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy batch favorite]
+  before_action :require_owner!, only: %i[new upload create edit update destroy batch favorite download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
   allow_unauthenticated_access only: %i[index show]
 
@@ -108,6 +108,19 @@ class PhotosController < ApplicationController
         end
         format.html { redirect_back_or_to user_photo_path(@owner, @photo), alert: result.errors.join(", ") }
       end
+    end
+  end
+
+  def download_zip
+    result = DownloadPhotos.call(owner: @owner, photo_ids: params[:photo_ids], variant: params[:variant])
+
+    if result.success?
+      send_data result.data,
+                filename: "photos_#{Date.today}.zip",
+                type: "application/zip",
+                disposition: "attachment"
+    else
+      redirect_to user_photos_path(@owner), alert: result.errors.join(", ")
     end
   end
 

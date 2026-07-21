@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["toolbar", "count"]
+  static values = { downloadUrl: String }
 
   connect() {
     this.selectedIds = new Set()
@@ -37,6 +38,37 @@ export default class extends Controller {
     })
     form.requestSubmit()
     document.getElementById("batch-tag-modal").close()
+    this.#clearAll()
+  }
+
+  download({ params: { variant = "original" } = {} }) {
+    const form = document.createElement("form")
+    form.method = "post"
+    form.action = this.downloadUrlValue
+
+    const csrf = document.createElement("input")
+    csrf.type = "hidden"
+    csrf.name = "authenticity_token"
+    csrf.value = document.querySelector("meta[name='csrf-token']").content
+    form.appendChild(csrf)
+
+    const variantInput = document.createElement("input")
+    variantInput.type = "hidden"
+    variantInput.name = "variant"
+    variantInput.value = variant
+    form.appendChild(variantInput)
+
+    this.selectedIds.forEach(id => {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = "photo_ids[]"
+      input.value = id
+      form.appendChild(input)
+    })
+
+    document.body.appendChild(form)
+    form.submit()
+    document.body.removeChild(form)
     this.#clearAll()
   }
 

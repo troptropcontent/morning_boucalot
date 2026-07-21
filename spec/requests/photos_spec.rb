@@ -171,6 +171,47 @@ RSpec.describe "Photos", type: :request do
     end
   end
 
+  describe "POST /:user_id/photos/download_zip" do
+    let!(:photos) { FactoryBot.create_list(:photo, 2, user: user) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "returns a ZIP file containing the selected photos" do
+        post download_zip_user_photos_path(user), params: { photo_ids: photos.map(&:id) }
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to eq("application/zip")
+        expect(response.headers["Content-Disposition"]).to include("attachment")
+        expect(response.headers["Content-Disposition"]).to include(".zip")
+      end
+
+      it "downloads the large variant when variant=large" do
+        post download_zip_user_photos_path(user), params: { photo_ids: photos.map(&:id), variant: "large" }
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to eq("application/zip")
+      end
+
+      it "redirects with alert when no photo_ids are given" do
+        post download_zip_user_photos_path(user), params: { photo_ids: [] }
+        expect(response).to redirect_to(user_photos_path(user))
+        expect(flash[:alert]).to be_present
+      end
+
+      it "returns 403 when targeting another user's scope" do
+        other_user = FactoryBot.create(:user)
+        post download_zip_user_photos_path(other_user), params: { photo_ids: photos.map(&:id) }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when not authenticated" do
+      it "redirects to login" do
+        post download_zip_user_photos_path(user), params: { photo_ids: photos.map(&:id) }
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
+
   describe "PATCH /:user_id/photos/batch" do
     let!(:photos) { FactoryBot.create_list(:photo, 2, user: user) }
 
