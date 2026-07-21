@@ -1,5 +1,5 @@
 <div class="mb-4">
-  <%= link_to "← Back to photos", user_photos_path(@owner), class: "link link-primary text-sm" %>
+  <%= link_to "← Back to photos", user_photos_path(@owner, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "link link-primary text-sm" %>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -8,7 +8,7 @@
       <%= image_tag photo.file.variant(:large), class: "rounded-lg w-full" %>
     <% end %>
     <% if local_assigns[:prev_photo_id] %>
-      <%= link_to user_photo_path(@owner, prev_photo_id), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
+      <%= link_to user_photo_path(@owner, prev_photo_id, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
         <div class="bg-black/40 rounded-full p-3 text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -17,7 +17,7 @@
       <% end %>
     <% end %>
     <% if local_assigns[:next_photo_id] %>
-      <%= link_to user_photo_path(@owner, next_photo_id), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
+      <%= link_to user_photo_path(@owner, next_photo_id, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
         <div class="bg-black/40 rounded-full p-3 text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

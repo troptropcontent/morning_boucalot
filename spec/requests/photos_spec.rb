@@ -58,6 +58,35 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).not_to include("Next photo")
       end
     end
+
+    context "with tag filter" do
+      let(:nature_tag) { FactoryBot.create(:tag, name: "nature") }
+      let!(:tagged_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago,   tags: [nature_tag]) }
+      let!(:tagged_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago,    tags: [nature_tag]) }
+      let!(:tagged_newer)  { FactoryBot.create(:photo, user: user, taken_at: Time.current, tags: [nature_tag]) }
+      let!(:untagged)      { FactoryBot.create(:photo, user: user, taken_at: 12.hours.ago) }
+
+      it "navigates only within tagged photos" do
+        get user_photo_path(user, tagged_middle, tag: "nature")
+        expect(response.body).to include(user_photo_path(user, tagged_newer, tag: "nature"))
+        expect(response.body).to include(user_photo_path(user, tagged_older, tag: "nature"))
+        expect(response.body).not_to include(user_photo_path(user, untagged))
+      end
+    end
+
+    context "with favorited filter" do
+      let!(:fav_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago,  favorited: true) }
+      let!(:fav_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago,   favorited: true) }
+      let!(:fav_newer)  { FactoryBot.create(:photo, user: user, taken_at: Time.current, favorited: true) }
+      let!(:unfav)      { FactoryBot.create(:photo, user: user, taken_at: 12.hours.ago, favorited: false) }
+
+      it "navigates only within favorited photos" do
+        get user_photo_path(user, fav_middle, favorited: "1")
+        expect(response.body).to include(user_photo_path(user, fav_newer, favorited: "1"))
+        expect(response.body).to include(user_photo_path(user, fav_older, favorited: "1"))
+        expect(response.body).not_to include(user_photo_path(user, unfav))
+      end
+    end
   end
 
   describe "POST /:user_id/photos" do

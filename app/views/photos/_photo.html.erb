@@ -21,7 +21,7 @@
     </div>
   <% end %>
 
-  <%= link_to user_photo_path(@owner, photo), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
+  <%= link_to user_photo_path(@owner, photo, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
     <div class="aspect-square overflow-hidden bg-base-300">
       <% if photo.file.attached? %>
         <%= image_tag photo.file.variant(:thumbnail), class: "w-full h-full object-cover" %>

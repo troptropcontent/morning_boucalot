@@ -13,7 +13,10 @@ class PhotosController < ApplicationController
   end
 
   def show
-    photo_ids = @owner.photos.recent.ids
+    photos = @owner.photos.recent
+    photos = photos.tagged_with(params[:tag]) if params[:tag].present?
+    photos = photos.favorited if params[:favorited].present?
+    photo_ids = photos.ids
     idx = photo_ids.index(@photo.id)
     @prev_photo_id = photo_ids[idx - 1] if idx&.positive?
     @next_photo_id = photo_ids[idx + 1] if idx && idx < photo_ids.length - 1
