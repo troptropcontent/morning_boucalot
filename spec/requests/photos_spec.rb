@@ -116,6 +116,61 @@ RSpec.describe "Photos", type: :request do
     end
   end
 
+  describe "GET /:user_id/photos?favorited=1" do
+    let!(:favorited_photo) { FactoryBot.create(:photo, user: user, favorited: true) }
+    let!(:regular_photo)   { FactoryBot.create(:photo, user: user, favorited: false) }
+
+    it "shows only favorited photos" do
+      get user_photos_path(user, favorited: 1)
+      expect(response.body).to include(user_photo_path(user, favorited_photo))
+      expect(response.body).not_to include(user_photo_path(user, regular_photo))
+    end
+  end
+
+  describe "PATCH /:user_id/photos/:id/favorite" do
+    let(:photo) { FactoryBot.create(:photo, user: user, favorited: false) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "toggles favorited to true and responds with turbo stream" do
+        patch favorite_user_photo_path(user, photo),
+              headers: { "Accept" => "text/vnd.turbo-stream.html" }
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include("text/vnd.turbo-stream.html")
+        expect(photo.reload.favorited).to be true
+      end
+
+      it "toggles favorited back to false" do
+        photo.update!(favorited: true)
+        patch favorite_user_photo_path(user, photo),
+              headers: { "Accept" => "text/vnd.turbo-stream.html" }
+        expect(photo.reload.favorited).to be false
+      end
+
+      it "redirects on html format" do
+        patch favorite_user_photo_path(user, photo)
+        expect(response).to redirect_to(user_photo_path(user, photo))
+      end
+    end
+
+    context "when not authenticated" do
+      it "redirects to login" do
+        patch favorite_user_photo_path(user, photo)
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+
+    context "when authenticated as a different user" do
+      it "returns 403" do
+        other_user = FactoryBot.create(:user)
+        sign_in(other_user)
+        patch favorite_user_photo_path(user, photo)
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+  end
+
   describe "PATCH /:user_id/photos/batch" do
     let!(:photos) { FactoryBot.create_list(:photo, 2, user: user) }
 

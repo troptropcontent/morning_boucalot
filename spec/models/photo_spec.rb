@@ -47,6 +47,17 @@ RSpec.describe Photo, type: :model do
     end
   end
 
+  describe ".favorited" do
+    it "returns only favorited photos" do
+      user = FactoryBot.create(:user)
+      fav = FactoryBot.create(:photo, user: user, favorited: true)
+      not_fav = FactoryBot.create(:photo, user: user, favorited: false)
+
+      expect(Photo.favorited).to include(fav)
+      expect(Photo.favorited).not_to include(not_fav)
+    end
+  end
+
   describe ".recent" do
     it "orders by taken_at descending, then created_at descending" do
       user = FactoryBot.create(:user)
