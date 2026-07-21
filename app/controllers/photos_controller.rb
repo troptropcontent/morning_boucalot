@@ -1,12 +1,13 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy batch]
-  before_action :set_photo, only: %i[show edit update destroy]
+  before_action :require_owner!, only: %i[new upload create edit update destroy batch favorite]
+  before_action :set_photo, only: %i[show edit update destroy favorite]
   allow_unauthenticated_access only: %i[index show]
 
   def index
     photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
+    photos = photos.favorited if params[:favorited].present?
     @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
     @pagy, @photos = pagy(photos, limit: 30)
   end
@@ -84,6 +85,28 @@ class PhotosController < ApplicationController
         alert = result.errors.join(", ")
         format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: alert }) }
         format.html { redirect_to user_photos_path(@owner), alert: alert }
+      end
+    end
+  end
+
+  def favorite
+    result = TogglePhotoFavorite.call(photo: @photo)
+
+    respond_to do |format|
+      if result.success?
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(
+            helpers.dom_id(@photo, :favorite_btn),
+            partial: "photos/favorite_button",
+            locals: { photo: @photo }
+          )
+        end
+        format.html { redirect_back_or_to user_photo_path(@owner, @photo) }
+      else
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: result.errors.join(", ") })
+        end
+        format.html { redirect_back_or_to user_photo_path(@owner, @photo), alert: result.errors.join(", ") }
       end
     end
   end

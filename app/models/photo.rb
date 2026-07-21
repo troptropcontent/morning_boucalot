@@ -8,6 +8,7 @@ class Photo < ApplicationRecord
 
   scope :recent, -> { order(taken_at: :desc, created_at: :desc) }
   scope :tagged_with, ->(name) { joins(:tags).where(tags: { name: name.downcase.strip }) }
+  scope :favorited, -> { where(favorited: true) }
 
   def tag_list
     tags.map(&:name).join(", ")

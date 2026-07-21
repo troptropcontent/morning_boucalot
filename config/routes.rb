@@ -6,6 +6,9 @@ Rails.application.routes.draw do
 
   scope "/:user_id", as: :user do
     resources :photos do
+      member do
+        patch :favorite
+      end
       collection do
         get :upload
         patch :batch
