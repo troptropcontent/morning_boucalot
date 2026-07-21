@@ -14,6 +14,13 @@
     </button>
   <% end %>
 
+  <%# Favorite button — only for the owner %>
+  <% if authenticated? && Current.user == @owner %>
+    <div class="absolute bottom-1.5 left-1.5 z-20">
+      <%= render "favorite_button", photo: photo %>
+    </div>
+  <% end %>
+
   <%= link_to user_photo_path(@owner, photo), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
     <div class="aspect-square overflow-hidden bg-base-300">
       <% if photo.file.attached? %>

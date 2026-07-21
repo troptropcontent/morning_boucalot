@@ -49,7 +49,8 @@
 
   <div class="divider"></div>
 
-  <div class="flex gap-2">
+  <div class="flex gap-2 items-center">
+    <%= render "favorite_button", photo: photo %>
     <% if photo.file.attached? %>
       <div class="dropdown dropdown-top">
         <div tabindex="0" role="button" class="btn btn-outline btn-sm">
