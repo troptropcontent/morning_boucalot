@@ -5,6 +5,7 @@ const STATUS = {
   uploading: { label: "Uploading…",  css: "badge-warning" },
   done:      { label: "Done",        css: "badge-success" },
   failed:    { label: "Failed",      css: "badge-error"   },
+  duplicate: { label: "Duplicate",   css: "badge-info"    },
 }
 
 export default class extends Controller {
@@ -84,9 +85,9 @@ export default class extends Controller {
       entry.status = "uploading"
       this.updateCard(entry.id, "uploading")
       try {
-        await this.upload(entry.file)
-        entry.status = "done"
-        this.updateCard(entry.id, "done")
+        const result = await this.upload(entry.file)
+        entry.status = result
+        this.updateCard(entry.id, result)
       } catch {
         entry.status = "failed"
         this.updateCard(entry.id, "failed")
@@ -102,21 +103,29 @@ export default class extends Controller {
     formData.append("photo[file]", file)
     const response = await fetch(this.uploadUrlValue, {
       method: "POST",
-      headers: { "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content },
+      headers: {
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]').content,
+        "Accept": "application/json",
+      },
       body: formData,
     })
     if (!response.ok) throw new Error("Upload failed")
+    const data = await response.json()
+    return data.status === "duplicate" ? "duplicate" : "done"
   }
 
   checkAllDone() {
     if (this.files.length === 0) return
-    const allSettled = this.files.every(e => e.status === "done" || e.status === "failed")
+    const settled = ["done", "failed", "duplicate"]
+    const allSettled = this.files.every(e => settled.includes(e.status))
     if (!allSettled) return
 
     const done = this.files.filter(e => e.status === "done").length
     const failed = this.files.filter(e => e.status === "failed").length
+    const duplicates = this.files.filter(e => e.status === "duplicate").length
     const parts = []
     if (done > 0) parts.push(`${done} photo${done > 1 ? "s" : ""} uploaded`)
+    if (duplicates > 0) parts.push(`${duplicates} duplicate${duplicates > 1 ? "s" : ""} skipped`)
     if (failed > 0) parts.push(`${failed} failed`)
     this.summaryTextTarget.textContent = parts.join(", ")
     this.summaryTarget.classList.remove("hidden")
