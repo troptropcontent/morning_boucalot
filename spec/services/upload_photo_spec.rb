@@ -49,6 +49,58 @@ RSpec.describe UploadPhoto do
       end
     end
 
+    context "with a duplicate file (same checksum)" do
+      before { UploadPhoto.call(user: user, params: { file: file }) }
+
+      it "returns a failure result" do
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        result = UploadPhoto.call(user: user, params: { file: duplicate_file })
+        expect(result).to be_failure
+      end
+
+      it "returns a duplicate error" do
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        result = UploadPhoto.call(user: user, params: { file: duplicate_file })
+        expect(result.errors).to eq([ "duplicate" ])
+      end
+
+      it "does not create a new photo" do
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        expect {
+          UploadPhoto.call(user: user, params: { file: duplicate_file })
+        }.not_to change { user.photos.count }
+      end
+
+      it "does not leave an orphaned blob" do
+        blob_count_before = ActiveStorage::Blob.count
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        UploadPhoto.call(user: user, params: { file: duplicate_file })
+        expect(ActiveStorage::Blob.count).to eq(blob_count_before)
+      end
+
+      it "allows the same file for a different user" do
+        other_user = FactoryBot.create(:user)
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        result = UploadPhoto.call(user: other_user, params: { file: duplicate_file })
+        expect(result).to be_success
+      end
+    end
+
     context "without a file" do
       it "returns a failure result" do
         result = UploadPhoto.call(user: user, params: {})
