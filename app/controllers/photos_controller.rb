@@ -36,6 +36,9 @@ class PhotosController < ApplicationController
       if result.success?
         format.html { redirect_to user_photo_path(@owner, result.data), notice: "Photo uploaded." }
         format.json { render json: { id: result.data.id }, status: :created }
+      elsif result.errors == [ "duplicate" ]
+        format.html { redirect_to upload_user_photos_path(@owner), notice: "Photo already exists, skipped." }
+        format.json { render json: { status: "duplicate" }, status: :ok }
       else
         format.html do
           @photo = Photo.new

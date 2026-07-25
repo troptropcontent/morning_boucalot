@@ -117,6 +117,34 @@ RSpec.describe "Photos", type: :request do
       post user_photos_path(other_user), params: { photo: { file: file, title: "Sunset" } }
       expect(response).to have_http_status(:forbidden)
     end
+
+    context "with a duplicate file (JSON)" do
+      before do
+        post user_photos_path(user), params: { photo: { file: file } }
+      end
+
+      it "returns 200 with duplicate status" do
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        post user_photos_path(user),
+          params: { photo: { file: duplicate_file } },
+          headers: { "Accept" => "application/json" }
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body["status"]).to eq("duplicate")
+      end
+
+      it "does not create a new photo" do
+        duplicate_file = Rack::Test::UploadedFile.new(
+          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          "image/jpeg"
+        )
+        expect {
+          post user_photos_path(user), params: { photo: { file: duplicate_file } }
+        }.not_to change(Photo, :count)
+      end
+    end
   end
 
   describe "PATCH /:user_id/photos/:id" do
