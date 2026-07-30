@@ -1,6 +1,13 @@
 <div class="space-y-4">
   <div>
-    <h1 class="text-2xl font-bold"><%= photo.title.presence || "Untitled" %></h1>
+    <div class="flex items-center gap-2">
+      <h1 class="text-2xl font-bold"><%= photo.title.presence || "Untitled" %></h1>
+      <% if photo.pending? %>
+        <span class="badge badge-warning badge-sm">Processing…</span>
+      <% elsif photo.failed? %>
+        <span class="badge badge-error badge-sm">Processing failed</span>
+      <% end %>
+    </div>
     <% if photo.description.present? %>
       <p class="text-base-content/70 mt-1"><%= photo.description %></p>
     <% end %>
@@ -50,7 +57,7 @@
   <div class="divider"></div>
 
   <div class="flex gap-2 items-center">
-    <%= render "favorite_button", photo: photo %>
+    <%= render "photos/favorite_button", photo: photo, owner: owner %>
     <% if photo.file.attached? %>
       <div class="dropdown dropdown-top">
         <div tabindex="0" role="button" class="btn btn-outline btn-sm">
@@ -79,9 +86,9 @@
         </ul>
       </div>
     <% end %>
-    <% if authenticated? && Current.user == @owner %>
-      <%= link_to "Edit", edit_user_photo_path(@owner, photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
-      <%= button_to "Delete", user_photo_path(@owner, photo), method: :delete,
+    <% if authenticated? && Current.user == owner %>
+      <%= link_to "Edit", edit_user_photo_path(owner, photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
+      <%= button_to "Delete", user_photo_path(owner, photo), method: :delete,
           data: { turbo_confirm: "Delete this photo?" },
           class: "btn btn-error btn-sm" %>
     <% end %>

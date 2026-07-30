@@ -1,6 +1,6 @@
 <div id="<%= dom_id(photo, :favorite_btn) %>">
-  <% if authenticated? && Current.user == @owner %>
-    <%= button_to favorite_user_photo_path(@owner, photo), method: :patch,
+  <% if authenticated? && Current.user == owner %>
+    <%= button_to favorite_user_photo_path(owner, photo), method: :patch,
         class: "w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 transition-colors",
         aria: { label: photo.favorited ? "Unfavorite" : "Favorite" } do %>
       <% if photo.favorited %>

@@ -61,6 +61,8 @@ gem "pagy", "~> 9.0"
 
 gem "aws-sdk-s3", require: false
 
+gem "solid_queue"
+
 group :production do
   gem "pg"
 end

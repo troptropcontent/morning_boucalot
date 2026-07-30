@@ -17,7 +17,7 @@
   <%# Favorite button — only for the owner %>
   <% if authenticated? && Current.user == @owner %>
     <div class="absolute bottom-1.5 left-1.5 z-20">
-      <%= render "favorite_button", photo: photo %>
+      <%= render "favorite_button", photo: photo, owner: @owner %>
     </div>
   <% end %>
 

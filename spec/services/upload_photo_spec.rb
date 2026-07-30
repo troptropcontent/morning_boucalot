@@ -47,6 +47,22 @@ RSpec.describe UploadPhoto do
         result = UploadPhoto.call(user: user, params: { file: file, tag_list: "" })
         expect(result.data.tags).to be_empty
       end
+
+      it "saves the photo with pending status" do
+        result = UploadPhoto.call(user: user, params: { file: file })
+        expect(result.data.status).to eq("pending")
+      end
+
+      it "enqueues a ProcessPhotoJob" do
+        expect {
+          UploadPhoto.call(user: user, params: { file: file })
+        }.to have_enqueued_job(ProcessPhotoJob)
+      end
+
+      it "does not extract EXIF during the upload" do
+        expect(ExtractExifData).not_to receive(:call)
+        UploadPhoto.call(user: user, params: { file: file })
+      end
     end
 
     context "with a duplicate file (same checksum)" do

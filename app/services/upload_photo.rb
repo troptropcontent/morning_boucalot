@@ -19,25 +19,14 @@ class UploadPhoto < ApplicationService
 
     SyncPhotoTags.new(photo: photo, tag_list: @params[:tag_list].to_s).call
 
-    if jpeg?(file.content_type)
-      exif = ExtractExifData.call(local_path(file))
-      photo.assign_attributes(exif) if exif.any?
-    end
-
     fail!(photo.errors.full_messages) unless photo.save
+
+    ProcessPhotoJob.perform_later(photo.id)
 
     photo
   end
 
   private
-
-  def jpeg?(content_type)
-    content_type.in?(%w[image/jpeg image/jpg])
-  end
-
-  def local_path(file)
-    file.respond_to?(:path) ? file.path : file.tempfile.path
-  end
 
   def checksum_exists?(checksum)
     ActiveStorage::Blob
