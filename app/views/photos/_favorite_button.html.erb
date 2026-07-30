@@ -1,7 +1,7 @@
 <div id="<%= dom_id(photo, :favorite_btn) %>">
   <% if authenticated? && Current.user == owner %>
     <%= button_to favorite_user_photo_path(owner, photo), method: :patch,
-        class: "w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 transition-colors",
+        class: "relative w-8 h-8 flex items-center justify-center rounded-full bg-black/30 hover:bg-black/50 transition-colors before:content-[''] before:absolute before:-inset-1.5",
         aria: { label: photo.favorited ? "Unfavorite" : "Favorite" } do %>
       <% if photo.favorited %>
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-red-400" viewBox="0 0 24 24" fill="currentColor">

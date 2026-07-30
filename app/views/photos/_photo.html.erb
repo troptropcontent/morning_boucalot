@@ -5,7 +5,7 @@
 
   <%# Select circle button — only for the owner %>
   <% if authenticated? && Current.user == @owner %>
-    <button class="select-btn absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full border-2 border-white/70 bg-black/25 shadow flex items-center justify-center transition-colors"
+    <button class="select-btn absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full border-2 border-white/70 bg-black/25 shadow flex items-center justify-center transition-colors before:content-[''] before:absolute before:-inset-2.5"
             data-action="click->photo-selection#toggleSelect"
             aria-label="Select photo">
       <svg class="select-check hidden w-4 h-4 text-primary-content" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

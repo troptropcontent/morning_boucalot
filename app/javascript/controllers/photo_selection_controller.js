@@ -2,12 +2,14 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["toolbar", "count"]
-  static values = { downloadUrl: String }
+  static values = { downloadUrl: String, storageKey: String }
 
   connect() {
-    this.selectedIds = new Set()
+    this.selectedIds = new Set(this.#loadStoredIds())
     this.frameRenderHandler = () => this.#applySelectionState()
     this.element.addEventListener("turbo:frame-render", this.frameRenderHandler)
+    this.#applySelectionState()
+    this.#updateToolbar()
   }
 
   disconnect() {
@@ -84,6 +86,7 @@ export default class extends Controller {
     selected ? this.selectedIds.add(id) : this.selectedIds.delete(id)
     this.#setCardVisual(card, selected)
     this.#updateToolbar()
+    this.#persist()
   }
 
   #setCardVisual(card, selected) {
@@ -114,11 +117,37 @@ export default class extends Controller {
       this.#setCardVisual(card, false)
     })
     this.#updateToolbar()
+    this.#persist()
   }
 
   #applySelectionState() {
     this.element.querySelectorAll("[data-photo-id]").forEach(card => {
       this.#setCardVisual(card, this.selectedIds.has(card.dataset.photoId))
     })
+  }
+
+  #storageKey() {
+    return `photo-selection:${this.storageKeyValue}`
+  }
+
+  #loadStoredIds() {
+    try {
+      const raw = sessionStorage.getItem(this.#storageKey())
+      return raw ? JSON.parse(raw) : []
+    } catch {
+      return []
+    }
+  }
+
+  #persist() {
+    try {
+      if (this.selectedIds.size === 0) {
+        sessionStorage.removeItem(this.#storageKey())
+      } else {
+        sessionStorage.setItem(this.#storageKey(), JSON.stringify([...this.selectedIds]))
+      }
+    } catch {
+      // sessionStorage unavailable (e.g. private browsing quota) — selection just won't persist
+    }
   }
 }

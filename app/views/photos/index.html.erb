@@ -1,5 +1,6 @@
 <div data-controller="photo-selection"
-     data-photo-selection-download-url-value="<%= download_zip_user_photos_path(@owner) %>">
+     data-photo-selection-download-url-value="<%= download_zip_user_photos_path(@owner) %>"
+     data-photo-selection-storage-key-value="<%= user_photos_path(@owner) %>">
   <turbo-frame id="photos-index" data-turbo-action="advance">
     <p class="text-sm text-base-content/50 mb-6"><%= @pagy.count %> photo<%= "s" unless @pagy.count == 1 %></p>
 
