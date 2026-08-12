@@ -12,7 +12,16 @@ class Photo < ApplicationRecord
 
   validates :file, presence: true
 
-  scope :recent, -> { order(taken_at: :desc, created_at: :desc) }
+  # Photos without EXIF data (or non-JPEGs) never get a taken_at from
+  # ProcessPhotoJob, so we default it to the upload time. This keeps taken_at
+  # always present, which lets `recent` sort on a plain indexed column
+  # instead of an expression, and keeps ordering identical between SQLite
+  # (dev) and Postgres (prod) — the two engines order NULLs differently.
+  before_save { self.taken_at ||= Time.current }
+
+  # `id` is a final tiebreaker so the order is fully deterministic — needed
+  # for keyset pagination in FindAdjacentPhotos to work reliably.
+  scope :recent, -> { order(taken_at: :desc, created_at: :desc, id: :desc) }
   scope :tagged_with, ->(name) { joins(:tags).where(tags: { name: name.downcase.strip }) }
   scope :favorited, -> { where(favorited: true) }
 

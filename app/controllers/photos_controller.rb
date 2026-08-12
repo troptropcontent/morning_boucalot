@@ -13,13 +13,12 @@ class PhotosController < ApplicationController
   end
 
   def show
-    photos = @owner.photos.recent
+    photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
     photos = photos.favorited if params[:favorited].present?
-    photo_ids = photos.ids
-    idx = photo_ids.index(@photo.id)
-    @prev_photo_id = photo_ids[idx - 1] if idx&.positive?
-    @next_photo_id = photo_ids[idx + 1] if idx && idx < photo_ids.length - 1
+    adjacent = FindAdjacentPhotos.call(photo: @photo, scope: photos).data
+    @prev_photo = adjacent[:previous_photo]
+    @next_photo = adjacent[:next_photo]
   end
 
   def new

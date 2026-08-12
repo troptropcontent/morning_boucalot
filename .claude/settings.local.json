@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git *)",
-      "Bash(bin/rails runner ' *)"
+      "Bash(bin/rails runner ' *)",
+      "Bash(node *)"
     ]
   }
 }

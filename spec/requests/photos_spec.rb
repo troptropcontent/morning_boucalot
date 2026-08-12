@@ -57,6 +57,16 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include(user_photo_path(user, middle_photo))
         expect(response.body).not_to include("Next photo")
       end
+
+      it "preloads the next photo's large variant when one exists" do
+        get user_photo_path(user, middle_photo)
+        expect(response.body).to include('data-controller="photo-preload"')
+      end
+
+      it "does not attempt to preload when there is no next photo" do
+        get user_photo_path(user, older_photo)
+        expect(response.body).not_to include('data-controller="photo-preload"')
+      end
     end
 
     context "with tag filter" do

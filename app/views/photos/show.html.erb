@@ -1,4 +1,4 @@
 <%= turbo_stream_from @photo %>
-<%= render layout: "photos/photo_layout", locals: { photo: @photo, prev_photo_id: @prev_photo_id, next_photo_id: @next_photo_id } do %>
+<%= render layout: "photos/photo_layout", locals: { photo: @photo, prev_photo: @prev_photo, next_photo: @next_photo } do %>
   <%= render "details", photo: @photo, owner: @owner %>
 <% end %>

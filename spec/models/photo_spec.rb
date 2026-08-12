@@ -67,4 +67,20 @@ RSpec.describe Photo, type: :model do
       expect(Photo.recent).to eq([ new_photo, old_photo ])
     end
   end
+
+  describe "taken_at defaulting" do
+    it "defaults taken_at to now when not provided" do
+      photo = FactoryBot.build(:photo, taken_at: nil)
+
+      expect { photo.save! }.to change(photo, :taken_at).from(nil)
+      expect(photo.taken_at).to be_within(5.seconds).of(Time.current)
+    end
+
+    it "does not override an explicitly set taken_at" do
+      taken_at = 3.days.ago
+      photo = FactoryBot.create(:photo, taken_at: taken_at)
+
+      expect(photo.taken_at).to be_within(1.second).of(taken_at)
+    end
+  end
 end

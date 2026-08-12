@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_30_163427) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_12_095203) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -61,11 +61,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_30_163427) do
     t.integer "iso"
     t.string "shutter_speed"
     t.string "status", default: "pending", null: false
-    t.datetime "taken_at"
+    t.datetime "taken_at", null: false
     t.string "title"
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.integer "width"
+    t.index ["user_id", "taken_at", "created_at"], name: "index_photos_on_user_id_and_taken_at_and_created_at"
     t.index ["user_id"], name: "index_photos_on_user_id"
   end
 
