@@ -23,6 +23,10 @@
           <% end %>
           <%= button_to "Sign out", session_path, method: :delete, class: "btn btn-ghost btn-sm" %>
         </div>
+      <% else %>
+        <div class="flex-none">
+          <%= link_to "Log in", new_session_path(return_to: request.fullpath), class: "btn btn-primary btn-sm" %>
+        </div>
       <% end %>
     </nav>
 
