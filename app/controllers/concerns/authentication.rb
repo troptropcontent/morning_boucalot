@@ -32,8 +32,18 @@ module Authentication
     end
 
     def request_authentication
-      session[:return_to_after_authenticating] = request.url
-      redirect_to new_session_path
+      respond_to do |format|
+        # Turbo Stream requests come from controls left visible on public pages
+        # (e.g. favoriting) — stay put and flash instead of navigating away.
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: "You must be logged in to do that." }),
+                 status: :unauthorized
+        end
+        format.any do
+          session[:return_to_after_authenticating] = request.url
+          redirect_to new_session_path
+        end
+      end
     end
 
     def after_authentication_url

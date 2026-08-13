@@ -244,11 +244,20 @@ RSpec.describe "Photos", type: :request do
     end
 
     context "when not authenticated" do
-      it "does not favorite the photo and redirects to login" do
+      it "does not favorite the photo and redirects to login on html format" do
         patch favorite_user_photo_path(user, photo)
 
         expect(photo.favorited_by?(user)).to be false
         expect(response).to redirect_to(new_session_path)
+      end
+
+      it "responds 401 and updates the flash in place on turbo stream requests, without redirecting" do
+        patch favorite_user_photo_path(user, photo),
+              headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.content_type).to include("text/vnd.turbo-stream.html")
+        expect(response.body).to include("You must be logged in to do that.")
       end
     end
   end
