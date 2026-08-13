@@ -7,6 +7,8 @@ RSpec.describe Photo, type: :model do
     it { is_expected.to belong_to(:user) }
     it { is_expected.to have_many(:photo_tags).dependent(:destroy) }
     it { is_expected.to have_many(:tags).through(:photo_tags) }
+    it { is_expected.to have_many(:favorites).dependent(:destroy) }
+    it { is_expected.to have_many(:favorited_by_users).through(:favorites).source(:user) }
   end
 
   describe "validations" do
@@ -47,14 +49,56 @@ RSpec.describe Photo, type: :model do
     end
   end
 
-  describe ".favorited" do
-    it "returns only favorited photos" do
+  describe ".favorited_by" do
+    it "returns only photos favorited by the given user" do
       user = FactoryBot.create(:user)
-      fav = FactoryBot.create(:photo, user: user, favorited: true)
-      not_fav = FactoryBot.create(:photo, user: user, favorited: false)
+      viewer = FactoryBot.create(:user)
+      fav = FactoryBot.create(:photo, user: user)
+      not_fav = FactoryBot.create(:photo, user: user)
+      FactoryBot.create(:favorite, user: viewer, photo: fav)
 
-      expect(Photo.favorited).to include(fav)
-      expect(Photo.favorited).not_to include(not_fav)
+      expect(Photo.favorited_by(viewer)).to include(fav)
+      expect(Photo.favorited_by(viewer)).not_to include(not_fav)
+    end
+
+    it "does not return another user's favorites" do
+      user = FactoryBot.create(:user)
+      other_user = FactoryBot.create(:user)
+      fav = FactoryBot.create(:photo, user: user)
+      FactoryBot.create(:favorite, user: other_user, photo: fav)
+
+      expect(Photo.favorited_by(user)).not_to include(fav)
+    end
+
+    it "returns none when no user is given" do
+      user = FactoryBot.create(:user)
+      fav = FactoryBot.create(:photo, user: user)
+      FactoryBot.create(:favorite, user: user, photo: fav)
+
+      expect(Photo.favorited_by(nil)).to be_empty
+    end
+  end
+
+  describe "#favorited_by?" do
+    it "is true once the given user has favorited the photo" do
+      user = FactoryBot.create(:user)
+      photo = FactoryBot.create(:photo)
+      FactoryBot.create(:favorite, user: user, photo: photo)
+
+      expect(photo.favorited_by?(user)).to be true
+    end
+
+    it "is false for a user who hasn't favorited the photo" do
+      user = FactoryBot.create(:user)
+      photo = FactoryBot.create(:photo)
+
+      expect(photo.favorited_by?(user)).to be false
+    end
+
+    it "is false when no user is given" do
+      photo = FactoryBot.create(:photo)
+
+      expect(photo.favorited_by?(nil)).to be false
     end
   end
 

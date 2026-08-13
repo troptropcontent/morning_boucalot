@@ -1,24 +1,26 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy batch favorite download_zip]
+  before_action :require_owner!, only: %i[new upload create edit update destroy batch download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
   allow_unauthenticated_access only: %i[index show]
 
   def index
     photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited if params[:favorited].present?
+    photos = photos.favorited_by(Current.user) if params[:favorited].present?
     @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
     @pagy, @photos = pagy(photos, limit: 30)
+    @favorited_photo_ids = favorited_photo_ids_for(@photos)
   end
 
   def show
     photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited if params[:favorited].present?
+    photos = photos.favorited_by(Current.user) if params[:favorited].present?
     adjacent = FindAdjacentPhotos.call(photo: @photo, scope: photos).data
     @prev_photo = adjacent[:previous_photo]
     @next_photo = adjacent[:next_photo]
+    @favorited_photo_ids = favorited_photo_ids_for([ @photo ])
   end
 
   def new
@@ -59,7 +61,7 @@ class PhotosController < ApplicationController
       if result.success?
         format.turbo_stream do
           render turbo_stream: [
-            turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo, owner: @owner }),
+            turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo, owner: @owner, favorited: @photo.favorited_by?(Current.user) }),
             turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: "Photo updated.", alert: nil })
           ]
         end
@@ -95,24 +97,17 @@ class PhotosController < ApplicationController
   end
 
   def favorite
-    result = TogglePhotoFavorite.call(photo: @photo)
+    favorited = TogglePhotoFavorite.call(photo: @photo, user: Current.user).data
 
     respond_to do |format|
-      if result.success?
-        format.turbo_stream do
-          render turbo_stream: turbo_stream.replace(
-            helpers.dom_id(@photo, :favorite_btn),
-            partial: "photos/favorite_button",
-            locals: { photo: @photo, owner: @owner }
-          )
-        end
-        format.html { redirect_back_or_to user_photo_path(@owner, @photo) }
-      else
-        format.turbo_stream do
-          render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: result.errors.join(", ") })
-        end
-        format.html { redirect_back_or_to user_photo_path(@owner, @photo), alert: result.errors.join(", ") }
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          helpers.dom_id(@photo, :favorite_btn),
+          partial: "photos/favorite_button",
+          locals: { photo: @photo, owner: @owner, favorited: favorited }
+        )
       end
+      format.html { redirect_back_or_to user_photo_path(@owner, @photo) }
     end
   end
 
@@ -150,5 +145,11 @@ class PhotosController < ApplicationController
 
   def photo_params
     params.require(:photo).permit(:file, :title, :description, :tag_list)
+  end
+
+  def favorited_photo_ids_for(photos)
+    return [] unless Current.user
+
+    Current.user.favorite_photos.where(id: photos.map(&:id)).ids
   end
 end

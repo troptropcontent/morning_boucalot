@@ -6,6 +6,8 @@ RSpec.describe User, type: :model do
   describe "associations" do
     it { is_expected.to have_many(:sessions).dependent(:destroy) }
     it { is_expected.to have_many(:photos) }
+    it { is_expected.to have_many(:favorites).dependent(:destroy) }
+    it { is_expected.to have_many(:favorite_photos).through(:favorites).source(:photo) }
   end
 
   describe "validations" do

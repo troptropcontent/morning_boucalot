@@ -34,11 +34,15 @@ class ProcessPhotoJob < ApplicationJob
   end
 
   def broadcast_details(photo)
+    # This broadcasts to every client subscribed to the photo's stream, so
+    # there's no single viewer to compute a favorited state for. The owner
+    # watching their own upload finish processing is the only realistic
+    # subscriber at this point, so we render from their perspective.
     Turbo::StreamsChannel.broadcast_update_to(
       photo,
       target: "photo_details",
       partial: "photos/details",
-      locals: { photo: photo, owner: photo.user, current_user: photo.user }
+      locals: { photo: photo, owner: photo.user, favorited: photo.favorited_by?(photo.user) }
     )
   end
 

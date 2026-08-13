@@ -14,12 +14,10 @@
     </button>
   <% end %>
 
-  <%# Favorite button — only for the owner %>
-  <% if authenticated? && Current.user == @owner %>
-    <div class="absolute bottom-1.5 left-1.5 z-20">
-      <%= render "favorite_button", photo: photo, owner: @owner %>
-    </div>
-  <% end %>
+  <%# Favorite button — visible to everyone; logging in is required to use it %>
+  <div class="absolute bottom-1.5 left-1.5 z-20">
+    <%= render "favorite_button", photo: photo, owner: @owner, favorited: @favorited_photo_ids.include?(photo.id) %>
+  </div>
 
   <%= link_to user_photo_path(@owner, photo, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
     <div class="aspect-square overflow-hidden bg-base-300">

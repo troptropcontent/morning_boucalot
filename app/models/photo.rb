@@ -7,6 +7,8 @@ class Photo < ApplicationRecord
   end
   has_many :photo_tags, dependent: :destroy
   has_many :tags, through: :photo_tags
+  has_many :favorites, dependent: :destroy
+  has_many :favorited_by_users, through: :favorites, source: :user
 
   enum :status, { pending: "pending", ready: "ready", failed: "failed" }
 
@@ -23,11 +25,13 @@ class Photo < ApplicationRecord
   # for keyset pagination in FindAdjacentPhotos to work reliably.
   scope :recent, -> { order(taken_at: :desc, created_at: :desc, id: :desc) }
   scope :tagged_with, ->(name) { joins(:tags).where(tags: { name: name.downcase.strip }) }
-  scope :favorited, -> { where(favorited: true) }
+  scope :favorited_by, ->(user) { joins(:favorites).where(favorites: { user_id: user&.id }) }
 
   def tag_list
     tags.map(&:name).join(", ")
   end
 
-
+  def favorited_by?(user)
+    user.present? && favorited_by_users.include?(user)
+  end
 end

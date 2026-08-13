@@ -1,3 +1,4 @@
+<%# locals: (photo:, owner:, favorited:) %>
 <div class="space-y-4">
   <div>
     <div class="flex items-center gap-2">
@@ -57,7 +58,7 @@
   <div class="divider"></div>
 
   <div class="flex gap-2 items-center">
-    <%= render "photos/favorite_button", photo: photo, owner: owner %>
+    <%= render "photos/favorite_button", photo: photo, owner: owner, favorited: favorited %>
     <% if photo.file.attached? %>
       <div class="dropdown dropdown-top">
         <div tabindex="0" role="button" class="btn btn-outline btn-sm">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_12_095203) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_13_072035) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -39,6 +39,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_095203) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "favorites", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "photo_id", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["photo_id"], name: "index_favorites_on_photo_id"
+    t.index ["user_id", "photo_id"], name: "index_favorites_on_user_id_and_photo_id", unique: true
+    t.index ["user_id"], name: "index_favorites_on_user_id"
+  end
+
   create_table "photo_tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "photo_id", null: false
@@ -54,7 +64,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_095203) do
     t.string "camera_model"
     t.datetime "created_at", null: false
     t.text "description"
-    t.boolean "favorited", default: false, null: false
     t.integer "file_size"
     t.decimal "focal_length", precision: 8, scale: 2
     t.integer "height"
@@ -96,6 +105,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_12_095203) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "favorites", "photos"
+  add_foreign_key "favorites", "users"
   add_foreign_key "photo_tags", "photos"
   add_foreign_key "photo_tags", "tags"
   add_foreign_key "photos", "users"

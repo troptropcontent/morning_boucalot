@@ -85,10 +85,15 @@ RSpec.describe "Photos", type: :request do
     end
 
     context "with favorited filter" do
-      let!(:fav_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago,  favorited: true) }
-      let!(:fav_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago,   favorited: true) }
-      let!(:fav_newer)  { FactoryBot.create(:photo, user: user, taken_at: Time.current, favorited: true) }
-      let!(:unfav)      { FactoryBot.create(:photo, user: user, taken_at: 12.hours.ago, favorited: false) }
+      let!(:fav_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago) }
+      let!(:fav_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago) }
+      let!(:fav_newer)  { FactoryBot.create(:photo, user: user, taken_at: Time.current) }
+      let!(:unfav)      { FactoryBot.create(:photo, user: user, taken_at: 12.hours.ago) }
+
+      before do
+        sign_in(user)
+        [ fav_older, fav_middle, fav_newer ].each { |photo| FactoryBot.create(:favorite, user: user, photo: photo) }
+      end
 
       it "navigates only within favorited photos" do
         get user_photo_path(user, fav_middle, favorited: "1")
@@ -184,8 +189,13 @@ RSpec.describe "Photos", type: :request do
   end
 
   describe "GET /:user_id/photos?favorited=1" do
-    let!(:favorited_photo) { FactoryBot.create(:photo, user: user, favorited: true) }
-    let!(:regular_photo)   { FactoryBot.create(:photo, user: user, favorited: false) }
+    let!(:favorited_photo) { FactoryBot.create(:photo, user: user) }
+    let!(:regular_photo)   { FactoryBot.create(:photo, user: user) }
+
+    before do
+      sign_in(user)
+      FactoryBot.create(:favorite, user: user, photo: favorited_photo)
+    end
 
     it "shows only favorited photos" do
       get user_photos_path(user, favorited: 1)
@@ -195,7 +205,7 @@ RSpec.describe "Photos", type: :request do
   end
 
   describe "PATCH /:user_id/photos/:id/favorite" do
-    let(:photo) { FactoryBot.create(:photo, user: user, favorited: false) }
+    let(:photo) { FactoryBot.create(:photo, user: user) }
 
     context "when authenticated as the owner" do
       before { sign_in(user) }
@@ -205,14 +215,14 @@ RSpec.describe "Photos", type: :request do
               headers: { "Accept" => "text/vnd.turbo-stream.html" }
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to include("text/vnd.turbo-stream.html")
-        expect(photo.reload.favorited).to be true
+        expect(photo.favorited_by?(user)).to be true
       end
 
       it "toggles favorited back to false" do
-        photo.update!(favorited: true)
+        FactoryBot.create(:favorite, user: user, photo: photo)
         patch favorite_user_photo_path(user, photo),
               headers: { "Accept" => "text/vnd.turbo-stream.html" }
-        expect(photo.reload.favorited).to be false
+        expect(photo.favorited_by?(user)).to be false
       end
 
       it "redirects on html format" do
@@ -221,19 +231,24 @@ RSpec.describe "Photos", type: :request do
       end
     end
 
-    context "when not authenticated" do
-      it "redirects to login" do
+    context "when authenticated as a different user" do
+      it "favorites the photo for that user without touching the owner's favorites" do
+        viewer = FactoryBot.create(:user)
+        sign_in(viewer)
+
         patch favorite_user_photo_path(user, photo)
-        expect(response).to redirect_to(new_session_path)
+
+        expect(photo.favorited_by?(viewer)).to be true
+        expect(photo.favorited_by?(user)).to be false
       end
     end
 
-    context "when authenticated as a different user" do
-      it "returns 403" do
-        other_user = FactoryBot.create(:user)
-        sign_in(other_user)
+    context "when not authenticated" do
+      it "does not favorite the photo and redirects to login" do
         patch favorite_user_photo_path(user, photo)
-        expect(response).to have_http_status(:forbidden)
+
+        expect(photo.favorited_by?(user)).to be false
+        expect(response).to redirect_to(new_session_path)
       end
     end
   end
