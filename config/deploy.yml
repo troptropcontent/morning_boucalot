@@ -17,7 +17,7 @@ servers:
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
   ssl: true
-  host: morningboucalot.thepocman.com
+  host: <%= ENV.fetch("APP_HOST") %>
   app_port: 3000
 
 ssh:
@@ -37,6 +37,7 @@ builder:
 env:
   clear:
     RAILS_SERVE_STATIC_FILES: "true"
+    APP_HOST: <%= ENV.fetch("APP_HOST") %>
   secret:
     - RAILS_MASTER_KEY
     - DATABASE_URL
@@ -47,6 +48,8 @@ env:
     - S3_BUCKET_NAME
     - S3_ENDPOINT
     - S3_FORCE_PATH_STYLE
+    - GMAIL_USERNAME
+    - GMAIL_APP_PASSWORD
 
 # Bridge fingerprinted assets between versions to avoid 404s on in-flight requests.
 # asset_path: /rails/public/assets
