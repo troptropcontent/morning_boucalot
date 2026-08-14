@@ -1,6 +1,6 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy batch]
+  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch]
   before_action :require_gallery_viewer!, only: %i[download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
   allow_unauthenticated_access only: %i[index show]
@@ -140,7 +140,7 @@ class PhotosController < ApplicationController
     @photo = @owner.photos.find(params[:id])
   end
 
-  def require_owner!
+  def require_gallery_owner!
     head :forbidden unless GalleryPolicy.new(user: Current.user, owner: @owner).owner?
   end
 
