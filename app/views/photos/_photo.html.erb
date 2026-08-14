@@ -1,10 +1,11 @@
+<%# locals: (photo:, owner:, filter:, favorited:) %>
 <div class="relative" data-photo-id="<%= photo.id %>">
 
   <%# Selection overlay %>
   <div class="select-overlay hidden absolute inset-0 z-10 bg-primary/25 pointer-events-none"></div>
 
   <%# Select circle button — for the owner and guests (both can download) %>
-  <% if gallery_policy(@owner).viewer? %>
+  <% if gallery_policy(owner).viewer? %>
     <button class="select-btn absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full border-2 border-white/70 bg-black/25 shadow flex items-center justify-center transition-colors before:content-[''] before:absolute before:-inset-2.5"
             data-action="click->photo-selection#toggleSelect"
             aria-label="Select photo">
@@ -16,10 +17,10 @@
 
   <%# Favorite button — visible to everyone; logging in is required to use it %>
   <div class="absolute bottom-1.5 left-1.5 z-20">
-    <%= render "favorite_button", photo: photo, owner: @owner, favorited: @favorited_photo_ids.include?(photo.id) %>
+    <%= render "favorite_button", photo: photo, owner: owner, favorited: favorited %>
   </div>
 
-  <%= link_to user_photo_path(@owner, photo, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
+  <%= link_to user_photo_path(owner, photo, **filter.to_params), class: "block active:opacity-75 transition-opacity", data: { turbo_frame: "_top" } do %>
     <div class="aspect-square overflow-hidden bg-base-300">
       <% if photo.file.attached? %>
         <%= image_tag photo.file.variant(:thumbnail), class: "w-full h-full object-cover" %>

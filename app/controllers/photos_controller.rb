@@ -3,21 +3,18 @@ class PhotosController < ApplicationController
   before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch]
   before_action :require_gallery_viewer!, only: %i[download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
+  before_action :set_filter, only: %i[index show edit]
   allow_unauthenticated_access only: %i[index show]
 
   def index
-    photos = @owner.photos.with_attached_file.recent
-    photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited_by(Current.user) if params[:favorited].present? && Current.user
+    photos = @filter.apply(@owner.photos.with_attached_file.recent)
     @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
     @pagy, @photos = pagy(photos, limit: 30)
     @favorited_photo_ids = favorited_photo_ids_for(@photos)
   end
 
   def show
-    photos = @owner.photos.with_attached_file.recent
-    photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited_by(Current.user) if params[:favorited].present? && Current.user
+    photos = @filter.apply(@owner.photos.with_attached_file.recent)
     adjacent = FindAdjacentPhotos.call(photo: @photo, scope: photos).data
     @prev_photo = adjacent[:previous_photo]
     @next_photo = adjacent[:next_photo]
@@ -138,6 +135,10 @@ class PhotosController < ApplicationController
 
   def set_photo
     @photo = @owner.photos.find(params[:id])
+  end
+
+  def set_filter
+    @filter = PhotoFilter.new(params: params, user: Current.user)
   end
 
   def require_gallery_owner!

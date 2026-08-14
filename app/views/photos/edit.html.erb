@@ -1,4 +1,4 @@
-<%= render layout: "photos/photo_layout", locals: { photo: @photo } do %>
+<%= render layout: "photos/photo_layout", locals: { photo: @photo, owner: @owner, filter: @filter } do %>
   <div class="space-y-4">
     <%= form_with model: @photo, url: user_photo_path(@owner, @photo), data: { turbo_action: "replace" } do |f| %>
       <div class="form-control">

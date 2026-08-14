@@ -1,6 +1,6 @@
-<%# locals: (photo:, prev_photo: nil, next_photo: nil) %>
+<%# locals: (photo:, owner:, filter:, prev_photo: nil, next_photo: nil) %>
 <div class="mb-4">
-  <%= link_to "← Back to photos", user_photos_path(@owner, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "link link-primary text-sm" %>
+  <%= link_to "← Back to photos", user_photos_path(owner, **filter.to_params), class: "link link-primary text-sm" %>
 </div>
 
 <%
@@ -15,7 +15,7 @@
       <%= image_tag photo.file.variant(:large), class: "rounded-lg w-full" %>
     <% end %>
     <% if prev_photo %>
-      <%= link_to user_photo_path(@owner, prev_photo, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
+      <%= link_to user_photo_path(owner, prev_photo, **filter.to_params), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
         <div class="bg-black/40 rounded-full p-3 text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -24,7 +24,7 @@
       <% end %>
     <% end %>
     <% if next_photo %>
-      <%= link_to user_photo_path(@owner, next_photo, tag: params[:tag].presence, favorited: params[:favorited].presence), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
+      <%= link_to user_photo_path(owner, next_photo, **filter.to_params), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
         <div class="bg-black/40 rounded-full p-3 text-white">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
