@@ -8,6 +8,16 @@ module ApplicationHelper
     authenticated? && Current.user == owner && Current.user.member?
   end
 
+  # True when the signed-in visitor belongs on this gallery — the member on
+  # their own gallery, or a guest on the gallery they were routed to by
+  # FindDefaultGalleryOwnerForUser (their own user_id never has photos, so
+  # `Current.user == owner` alone would miss the gallery guests actually
+  # see). Unlike owner_of?, doesn't require Current.user.member?: guests may
+  # view/download here, just not edit.
+  def gallery_viewer?(owner)
+    authenticated? && default_gallery_owner_for_current_user == owner
+  end
+
   def pagy_nav(pagy, **vars)
     p_prev  = pagy.prev
     p_next  = pagy.next
@@ -40,5 +50,13 @@ module ApplicationHelper
 
     html << "</div>"
     html.html_safe
+  end
+
+  private
+
+  # Memoized per render — for a guest this issues a query
+  # (User.member.first), and gallery_viewer? is called once per photo card.
+  def default_gallery_owner_for_current_user
+    @default_gallery_owner_for_current_user ||= FindDefaultGalleryOwnerForUser.call(user: Current.user).data
   end
 end

@@ -189,6 +189,36 @@ RSpec.describe "GuestSessions", type: :request do
       expect(post(download_zip_user_photos_path(guest), params: { photo_ids: [ photo.id ] })).to eq(403)
     end
 
+    it "can download a zip of the member's gallery, since that doesn't mutate anything" do
+      member = FactoryBot.create(:user)
+      photo = FactoryBot.create(:photo, user: member)
+      sign_in_as_guest("guest@example.com")
+
+      post download_zip_user_photos_path(member), params: { photo_ids: [ photo.id ] }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.content_type).to eq("application/zip")
+    end
+
+    it "cannot batch-tag the member's gallery, even though they can view and download it" do
+      member = FactoryBot.create(:user)
+      photo = FactoryBot.create(:photo, user: member)
+      sign_in_as_guest("guest@example.com")
+
+      expect(patch(batch_user_photos_path(member), params: { photo_ids: [ photo.id ], tag_list: "x" })).to eq(403)
+    end
+
+    it "cannot download a gallery other than the one they were routed to" do
+      # Guests are routed to the first member's gallery (single-member app),
+      # so `_first_member`, not `other_member`, is where this guest lands.
+      _first_member = FactoryBot.create(:user)
+      other_member = FactoryBot.create(:user)
+      photo = FactoryBot.create(:photo, user: other_member)
+      sign_in_as_guest("guest@example.com")
+
+      expect(post(download_zip_user_photos_path(other_member), params: { photo_ids: [ photo.id ] })).to eq(403)
+    end
+
     it "can still favorite photos" do
       guest = sign_in_as_guest("guest@example.com")
       photo = FactoryBot.create(:photo)
@@ -196,6 +226,18 @@ RSpec.describe "GuestSessions", type: :request do
       patch favorite_user_photo_path(photo.user, photo)
 
       expect(photo.favorited_by?(guest)).to be true
+    end
+
+    it "sees the select/download controls on the member's gallery, but not batch-tagging" do
+      member = FactoryBot.create(:user)
+      FactoryBot.create(:photo, user: member)
+      sign_in_as_guest("guest@example.com")
+
+      get user_photos_path(member)
+
+      expect(response.body).to include("select-btn")
+      expect(response.body).to include("Download ▾")
+      expect(response.body).not_to include("Add tag")
     end
 
     it "does not see the navbar's Upload link, unlike a member" do

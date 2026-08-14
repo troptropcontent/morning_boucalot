@@ -1,6 +1,7 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_owner!, only: %i[new upload create edit update destroy batch download_zip]
+  before_action :require_owner!, only: %i[new upload create edit update destroy batch]
+  before_action :require_gallery_viewer!, only: %i[download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
   allow_unauthenticated_access only: %i[index show]
 
@@ -144,6 +145,16 @@ class PhotosController < ApplicationController
   # so without the role check they could upload to it.
   def require_owner!
     head :forbidden unless Current.user == @owner && Current.user.member?
+  end
+
+  # Downloading doesn't mutate the owner's data — it just exports what the
+  # viewer can already see on this gallery — so guests are allowed too,
+  # unlike require_owner! above. A guest's own user_id never has photos
+  # (FindDefaultGalleryOwnerForUser routes them to the member's gallery
+  # instead), so `Current.user == @owner` alone would reject every guest;
+  # this checks the gallery they were actually routed to.
+  def require_gallery_viewer!
+    head :forbidden unless FindDefaultGalleryOwnerForUser.call(user: Current.user).data == @owner
   end
 
   def photo_params
