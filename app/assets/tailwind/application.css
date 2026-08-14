@@ -1,3 +1,39 @@
 @import "tailwindcss";
 @plugin "daisyui";
 @source "../../helpers/**/*.rb";
+
+/* Brand the focus ring with the primary color instead of daisyUI's
+   default (base-content / black), so focus states match the rest of
+   the UI's indigo accent. --input-color is the variable every
+   input-family component (input, select, textarea, file-input) reads
+   from, and .btn's outline-color falls back to --color-base-content
+   when a button has no color variant (e.g. btn-ghost) — overriding
+   both here covers every field and button in one place instead of
+   tagging each one with an -primary modifier class. */
+@utility input {
+  &:focus, &:focus-within {
+    --input-color: var(--color-primary);
+  }
+}
+
+@utility select {
+  &:focus, &:focus-within {
+    --input-color: var(--color-primary);
+  }
+}
+
+@utility textarea {
+  &:focus, &:focus-within {
+    --input-color: var(--color-primary);
+  }
+}
+
+@utility file-input {
+  &:focus, &:focus-within {
+    --input-color: var(--color-primary);
+  }
+}
+
+@utility btn {
+  outline-color: var(--btn-color, var(--color-primary));
+}
