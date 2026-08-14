@@ -220,15 +220,34 @@ RSpec.describe "Photos", type: :request do
       get user_photos_path(user, favorited: 1)
       expect(response.body).to include("No favorites yet.")
     end
+
+    it "ignores the filter once signed out, instead of showing an empty gallery" do
+      # `favorited` is scoped to Current.user; without a session there's no
+      # "my favorites" to show. A visitor can land here with the param still
+      # set — e.g. sign-out redirects back to the referring URL — so this
+      # must show the full gallery, not a blank one that reads as "no photos".
+      delete session_path
+
+      get user_photos_path(user, favorited: 1)
+      expect(response.body).to include(user_photo_path(user, favorited_photo))
+      expect(response.body).to include(user_photo_path(user, regular_photo))
+      expect(response.body).not_to include("No favorites yet.")
+    end
   end
 
   describe "GET /:user_id/photos favorites toggle" do
     let!(:photo) { FactoryBot.create(:photo, user: user) }
 
     it "links to the favorited-only view and is inactive by default" do
+      sign_in(user)
       get user_photos_path(user)
       expect(response.body).to include(user_photos_path(user, favorited: 1))
       expect(response.body).to include('aria-pressed="false"')
+    end
+
+    it "is hidden from unauthenticated visitors, since it has nothing to scope by" do
+      get user_photos_path(user)
+      expect(response.body).not_to include("Favorites")
     end
   end
 

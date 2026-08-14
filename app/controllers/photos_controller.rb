@@ -8,7 +8,7 @@ class PhotosController < ApplicationController
   def index
     photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited_by(Current.user) if params[:favorited].present?
+    photos = photos.favorited_by(Current.user) if params[:favorited].present? && Current.user
     @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
     @pagy, @photos = pagy(photos, limit: 30)
     @favorited_photo_ids = favorited_photo_ids_for(@photos)
@@ -17,7 +17,7 @@ class PhotosController < ApplicationController
   def show
     photos = @owner.photos.with_attached_file.recent
     photos = photos.tagged_with(params[:tag]) if params[:tag].present?
-    photos = photos.favorited_by(Current.user) if params[:favorited].present?
+    photos = photos.favorited_by(Current.user) if params[:favorited].present? && Current.user
     adjacent = FindAdjacentPhotos.call(photo: @photo, scope: photos).data
     @prev_photo = adjacent[:previous_photo]
     @next_photo = adjacent[:next_photo]
