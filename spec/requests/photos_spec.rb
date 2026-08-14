@@ -207,6 +207,29 @@ RSpec.describe "Photos", type: :request do
       expect(response.body).to include(user_photo_path(user, favorited_photo))
       expect(response.body).not_to include(user_photo_path(user, regular_photo))
     end
+
+    it "marks the favorites toggle as active and links back to the unfiltered list" do
+      get user_photos_path(user, favorited: 1)
+      expect(response.body).to include(%(href="#{user_photos_path(user)}"))
+      expect(response.body).to include('aria-pressed="true"')
+    end
+
+    it "shows an empty state when there are no favorites" do
+      Favorite.destroy_all
+
+      get user_photos_path(user, favorited: 1)
+      expect(response.body).to include("No favorites yet.")
+    end
+  end
+
+  describe "GET /:user_id/photos favorites toggle" do
+    let!(:photo) { FactoryBot.create(:photo, user: user) }
+
+    it "links to the favorited-only view and is inactive by default" do
+      get user_photos_path(user)
+      expect(response.body).to include(user_photos_path(user, favorited: 1))
+      expect(response.body).to include('aria-pressed="false"')
+    end
   end
 
   describe "PATCH /:user_id/photos/:id/favorite" do
