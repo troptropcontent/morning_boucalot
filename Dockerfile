@@ -42,8 +42,12 @@ COPY . .
 # Precompile bootsnap code for faster boot times
 RUN bundle exec bootsnap precompile app/ lib/
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# Precompiling assets for production without requiring secret RAILS_MASTER_KEY.
+# APP_HOST is only needed here to satisfy config/environments/production.rb's
+# ENV.fetch at boot; the real value is injected at container runtime by Kamal
+# (see config/deploy.yml env.clear.APP_HOST), so this placeholder never leaks
+# into a running container or an actual mailer link.
+RUN SECRET_KEY_BASE_DUMMY=1 APP_HOST=placeholder.invalid ./bin/rails assets:precompile
 
 # Final stage for app image
 FROM base AS final
