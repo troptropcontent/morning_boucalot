@@ -28,9 +28,18 @@
 
           <div class="form-control mb-6">
             <%= form.label :password, "Password", class: "label" %>
-            <%= form.password_field :password, required: true,
-                autocomplete: "current-password", placeholder: "••••••••",
-                maxlength: 72, class: "input input-bordered w-full" %>
+            <div class="relative" data-controller="password-visibility">
+              <%= form.password_field :password, required: true,
+                  autocomplete: "current-password", placeholder: "••••••••",
+                  maxlength: 72, class: "input input-bordered w-full pr-16",
+                  data: { password_visibility_target: "input" } %>
+              <button type="button"
+                  class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-2 text-sm font-medium text-primary rounded focus-visible:outline-primary"
+                  data-action="password-visibility#toggle"
+                  data-password-visibility-target="button"
+                  aria-pressed="false"
+                  aria-label="Show password">Show</button>
+            </div>
           </div>
 
           <%= form.submit "Sign in", class: "btn btn-primary w-full" %>
