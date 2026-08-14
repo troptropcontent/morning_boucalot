@@ -87,7 +87,7 @@
         </ul>
       </div>
     <% end %>
-    <% if owner_of?(owner) %>
+    <% if gallery_policy(owner).owner? %>
       <%= link_to "Edit", edit_user_photo_path(owner, photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
       <%= button_to "Delete", user_photo_path(owner, photo), method: :delete,
           data: { turbo_confirm: "Delete this photo?" },

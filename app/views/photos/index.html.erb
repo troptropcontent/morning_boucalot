@@ -30,7 +30,7 @@
           <%= link_to "View all photos", user_photos_path(@owner), class: "link link-primary" %>
         <% else %>
           <p class="text-lg">No photos yet.</p>
-          <% if owner_of?(@owner) %>
+          <% if gallery_policy(@owner).owner? %>
             <%= link_to "Upload your first photo", upload_user_photos_path(@owner), class: "link link-primary" %>
           <% end %>
         <% end %>
@@ -62,7 +62,7 @@
        class="hidden fixed bottom-6 inset-x-4 z-40 flex items-center justify-between gap-3 bg-base-100 shadow-xl rounded-2xl px-4 py-3">
     <span class="text-sm font-semibold" data-photo-selection-target="count"></span>
     <div class="flex gap-2">
-      <% if gallery_viewer?(@owner) %>
+      <% if gallery_policy(@owner).viewer? %>
         <div class="dropdown dropdown-top">
           <label tabindex="0" class="btn btn-neutral btn-sm">Download ▾</label>
           <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box shadow w-44 mb-1 z-50">
@@ -81,7 +81,7 @@
           </ul>
         </div>
       <% end %>
-      <% if owner_of?(@owner) %>
+      <% if gallery_policy(@owner).owner? %>
         <button class="btn btn-primary btn-sm" data-action="photo-selection#openTagModal">
           Add tag
         </button>
@@ -93,7 +93,7 @@
   </div>
 
   <%# Batch tag modal — also outside the frame %>
-  <% if owner_of?(@owner) %>
+  <% if gallery_policy(@owner).owner? %>
     <dialog id="batch-tag-modal" class="modal">
       <div class="modal-box">
         <h3 class="font-bold text-lg mb-4">Add tags to selection</h3>

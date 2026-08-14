@@ -140,21 +140,12 @@ class PhotosController < ApplicationController
     @photo = @owner.photos.find(params[:id])
   end
 
-  # Identity alone isn't enough now that guests exist: a guest is always
-  # `Current.user == @owner` on their own (empty, photo-less) gallery URL,
-  # so without the role check they could upload to it.
   def require_owner!
-    head :forbidden unless Current.user == @owner && Current.user.member?
+    head :forbidden unless GalleryPolicy.new(user: Current.user, owner: @owner).owner?
   end
 
-  # Downloading doesn't mutate the owner's data — it just exports what the
-  # viewer can already see on this gallery — so guests are allowed too,
-  # unlike require_owner! above. A guest's own user_id never has photos
-  # (FindDefaultGalleryOwnerForUser routes them to the member's gallery
-  # instead), so `Current.user == @owner` alone would reject every guest;
-  # this checks the gallery they were actually routed to.
   def require_gallery_viewer!
-    head :forbidden unless FindDefaultGalleryOwnerForUser.call(user: Current.user).data == @owner
+    head :forbidden unless GalleryPolicy.new(user: Current.user, owner: @owner).viewer?
   end
 
   def photo_params
