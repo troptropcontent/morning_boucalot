@@ -17,7 +17,7 @@ servers:
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
   ssl: true
-  host: <%= ENV.fetch("APP_HOST") %>
+  host: <%= ENV.fetch("PRODUCTION_APP_HOST") %>
   app_port: 3000
 
 ssh:
@@ -37,7 +37,7 @@ builder:
 env:
   clear:
     RAILS_SERVE_STATIC_FILES: "true"
-    APP_HOST: <%= ENV.fetch("APP_HOST") %>
+    APP_HOST: <%= ENV.fetch("PRODUCTION_APP_HOST") %>
   secret:
     - RAILS_MASTER_KEY
     - DATABASE_URL
