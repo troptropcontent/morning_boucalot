@@ -39,8 +39,19 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :s3
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
+  # Send real email through Gmail SMTP (see README/CLAUDE.md for the
+  # GMAIL_USERNAME / GMAIL_APP_PASSWORD env vars this needs).
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: "smtp.gmail.com",
+    port: 587,
+    domain: "gmail.com",
+    user_name: ENV["GMAIL_USERNAME"],
+    password: ENV["GMAIL_APP_PASSWORD"],
+    authentication: "plain",
+    enable_starttls_auto: true
+  }
 
   config.action_mailer.perform_caching = false
 
@@ -82,6 +93,10 @@ Rails.application.configure do
   config.hosts << "localhost:3000"
 
   config.action_cable.allowed_request_origins = ["https://#{pf_host}", "http://localhost:3000"]
+
+  # So mailer views (e.g. password reset / OTP links) generate URLs you can
+  # actually open from the Codespaces-forwarded address.
+  config.action_mailer.default_url_options = { host: pf_host, protocol: "https" }
 
   # Origin header may be localhost when accessing via Codespaces port-forwarding proxy.
   # CSRF token check still protects against forgery.
