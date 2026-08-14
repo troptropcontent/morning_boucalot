@@ -37,3 +37,11 @@
 @utility btn {
   outline-color: var(--btn-color, var(--color-primary));
 }
+
+/* daisyUI 5's .label has no margin of its own (it's built for the
+   newer fieldset/legend pattern, not "label stacked above input" like
+   we use it here) — without this the focus ring sits close enough to
+   visually touch the label above it. */
+@utility label {
+  margin-bottom: 0.5rem;
+}
