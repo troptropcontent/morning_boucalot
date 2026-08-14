@@ -7,6 +7,10 @@
   <body class="bg-base-200 min-h-screen flex flex-col items-center justify-center px-4">
     <%= render "layouts/flash_toast" %>
 
+    <%# Same wordmark as the main nav (app/views/layouts/application.html.erb)
+        so an auth page still reads as part of the app, not a generic template. %>
+    <%= link_to "MorningBoucalot", root_path, class: "text-xl font-bold mb-6" %>
+
     <%= yield %>
   </body>
 </html>
