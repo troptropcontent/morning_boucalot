@@ -15,7 +15,7 @@
         since the tabs already sit inside a card — a second nested box looked
         cluttered. %>
     <div class="tabs tabs-border w-full justify-center mb-6" role="tablist">
-      <input type="radio" name="login_tabs" role="tab" class="tab flex-1 text-base font-medium" aria-label="Member" <%= "checked" unless guest_tab_open %> />
+      <input type="radio" name="login_tabs" role="tab" class="tab flex-1 text-base font-medium checked:text-primary" aria-label="Member" <%= "checked" unless guest_tab_open %> />
       <div role="tabpanel" class="tab-content pt-6">
         <%= form_with url: session_url do |form| %>
           <div class="form-control mb-4">
@@ -41,7 +41,7 @@
         </div>
       </div>
 
-      <input type="radio" name="login_tabs" role="tab" class="tab flex-1 text-base font-medium" aria-label="Guest" <%= "checked" if guest_tab_open %> />
+      <input type="radio" name="login_tabs" role="tab" class="tab flex-1 text-base font-medium checked:text-primary" aria-label="Guest" <%= "checked" if guest_tab_open %> />
       <div role="tabpanel" class="tab-content pt-6">
         <%= turbo_frame_tag "guest_login" do %>
           <% if session[:guest_otp] %>
