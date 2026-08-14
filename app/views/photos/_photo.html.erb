@@ -4,7 +4,7 @@
   <div class="select-overlay hidden absolute inset-0 z-10 bg-primary/25 pointer-events-none"></div>
 
   <%# Select circle button — only for the owner %>
-  <% if authenticated? && Current.user == @owner %>
+  <% if owner_of?(@owner) %>
     <button class="select-btn absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full border-2 border-white/70 bg-black/25 shadow flex items-center justify-center transition-colors before:content-[''] before:absolute before:-inset-2.5"
             data-action="click->photo-selection#toggleSelect"
             aria-label="Select photo">

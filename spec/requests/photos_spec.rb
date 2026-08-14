@@ -18,6 +18,11 @@ RSpec.describe "Photos", type: :request do
         get user_photos_path(user)
         expect(response).to have_http_status(:ok)
       end
+
+      it "shows the navbar's Upload link" do
+        get user_photos_path(user)
+        expect(response.body).to include("+ Upload")
+      end
     end
   end
 

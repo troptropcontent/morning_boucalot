@@ -1,6 +1,13 @@
 module ApplicationHelper
   include Pagy::Frontend
 
+  # True when the signed-in visitor is the actual member who owns this
+  # gallery — not just a guest who happens to be viewing/favoriting the
+  # same URL they'd see if `Current.user == owner` were checked alone.
+  def owner_of?(owner)
+    authenticated? && Current.user == owner && Current.user.member?
+  end
+
   def pagy_nav(pagy, **vars)
     p_prev  = pagy.prev
     p_next  = pagy.next

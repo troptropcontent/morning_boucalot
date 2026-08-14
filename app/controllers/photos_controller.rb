@@ -139,8 +139,11 @@ class PhotosController < ApplicationController
     @photo = @owner.photos.find(params[:id])
   end
 
+  # Identity alone isn't enough now that guests exist: a guest is always
+  # `Current.user == @owner` on their own (empty, photo-less) gallery URL,
+  # so without the role check they could upload to it.
   def require_owner!
-    head :forbidden unless Current.user == @owner
+    head :forbidden unless Current.user == @owner && Current.user.member?
   end
 
   def photo_params
