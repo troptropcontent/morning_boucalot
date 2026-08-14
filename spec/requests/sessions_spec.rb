@@ -44,9 +44,9 @@ RSpec.describe "Sessions", type: :request do
       expect(response).to redirect_to(user_photos_path(user))
     end
 
-    it "redirects back to the login page with an alert on bad credentials" do
+    it "redirects back to the member tab with an alert on bad credentials" do
       post session_path, params: { email_address: user.email_address, password: "wrong" }
-      expect(response).to redirect_to(new_session_path)
+      expect(response).to redirect_to(new_session_path(tab: "member"))
       expect(flash[:alert]).to be_present
     end
   end

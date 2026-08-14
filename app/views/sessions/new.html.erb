@@ -3,10 +3,11 @@
     <h1 class="card-title text-2xl mb-4">Sign in</h1>
 
     <%
-      # Which tab opens on load — honors ?tab=guest so a no-JS redirect back
-      # here (e.g. a failed guest login) reopens the tab the visitor was on,
-      # instead of silently resetting to Member.
-      guest_tab_open = params[:tab] == "guest"
+      # Which tab opens on load — Guest by default (the common case), unless
+      # ?tab=member says otherwise. A no-JS redirect back here (e.g. a failed
+      # login on either tab) passes the tab it came from, so it reopens on
+      # the same tab instead of silently resetting to Guest.
+      guest_tab_open = params[:tab] != "member"
     %>
 
     <%# DaisyUI's radio-input tabs — pure CSS, no JS needed to switch panels.
