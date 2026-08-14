@@ -2,6 +2,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   resource :session
+  resource :guest_session, only: %i[create edit update destroy]
   resources :passwords, param: :token
 
   scope "/:user_id", as: :user do

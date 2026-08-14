@@ -1,0 +1,29 @@
+<p class="text-sm text-base-content/70 mb-4">Enter the code we emailed you.</p>
+
+<%# turbo_frame: "_top" — this form is rendered inside the guest_login frame,
+    but a *correct* code (or the code finally locking out after too many
+    attempts) needs to leave the code step entirely, so those responses are
+    plain top-level redirects — same as the rest of this app's multi-step
+    auth forms (e.g. password reset). An *incorrect* code stays on this same
+    screen, so the controller answers that case with a Turbo Stream update
+    instead, which applies in place regardless of this "_top" target. %>
+<%= form_with url: guest_session_path, method: :patch, data: { turbo_frame: "_top" }, class: "contents" do |form| %>
+  <div class="form-control mb-4">
+    <%= form.label :code, "Code", class: "label" %>
+    <%= form.text_field :code, required: true, autofocus: true,
+        inputmode: "numeric", pattern: "[0-9]*", autocomplete: "one-time-code",
+        maxlength: Otp::CODE_LENGTH,
+        class: "input input-bordered w-full text-center text-2xl tracking-widest" %>
+  </div>
+
+  <%= form.submit "Verify", class: "btn btn-primary w-full" %>
+<% end %>
+
+<div class="mt-2">
+  <%# Escapes to _top for the same reason as the form above — the redirect
+      target (the guest tab's email form) isn't guaranteed to exist as a
+      "guest_login" frame on every page this partial renders on (e.g. the
+      no-JS edit_guest_session_path fallback). %>
+  <%= button_to "Use a different email", guest_session_path, method: :delete,
+      data: { turbo_frame: "_top" }, class: "btn btn-ghost btn-sm w-full" %>
+</div>
