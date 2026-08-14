@@ -18,13 +18,13 @@ RSpec.describe "Sessions", type: :request do
     it "ignores an absolute return_to to avoid an open redirect" do
       get new_session_path(return_to: "https://evil.example/steal")
       post session_path, params: { email_address: user.email_address, password: "password123" }
-      expect(response).to redirect_to(user_photos_url(user))
+      expect(response).to redirect_to(root_url)
     end
 
     it "ignores a protocol-relative return_to" do
       get new_session_path(return_to: "//evil.example/steal")
       post session_path, params: { email_address: user.email_address, password: "password123" }
-      expect(response).to redirect_to(user_photos_url(user))
+      expect(response).to redirect_to(root_url)
     end
 
     it "does not clear a return_to already stashed by a protected-page redirect" do
@@ -39,9 +39,9 @@ RSpec.describe "Sessions", type: :request do
   end
 
   describe "POST /session" do
-    it "signs the user in and redirects to their photos by default" do
+    it "signs the user in and redirects to the root page by default" do
       post session_path, params: { email_address: user.email_address, password: "password123" }
-      expect(response).to redirect_to(user_photos_path(user))
+      expect(response).to redirect_to(root_path)
     end
 
     it "redirects back to the member tab with an alert on bad credentials" do

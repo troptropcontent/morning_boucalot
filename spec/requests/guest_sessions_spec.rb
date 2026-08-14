@@ -71,7 +71,7 @@ RSpec.describe "GuestSessions", type: :request do
         patch guest_session_path, params: { code: code }
       }.to change(User, :count).by(1)
 
-      expect(response).to redirect_to(user_photos_path(User.last))
+      expect(response).to redirect_to(root_path)
       expect(User.last).to be_guest
       expect(User.last.email_address).to eq("guest@example.com")
     end
@@ -116,7 +116,7 @@ RSpec.describe "GuestSessions", type: :request do
 
       patch guest_session_path, params: { code: code }
 
-      expect(response).to redirect_to(user_photos_path(User.last))
+      expect(response).to redirect_to(root_path)
     end
 
     it "redirects to the guest tab once the attempt cap is exhausted" do

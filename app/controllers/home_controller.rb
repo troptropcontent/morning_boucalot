@@ -3,7 +3,8 @@ class HomeController < ApplicationController
 
   def index
     if authenticated?
-      redirect_to user_photos_path(Current.user)
+      owner = FindDefaultGalleryOwnerForUser.call(user: Current.user).data
+      redirect_to user_photos_path(owner)
     else
       redirect_to new_session_path
     end
