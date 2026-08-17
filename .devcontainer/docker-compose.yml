@@ -8,6 +8,7 @@ services:
     command: sleep infinity
     environment:
       PLAYWRIGHT_WS_ENDPOINT: ws://chromium:3001
+      CLAUDE_CODE_DISABLE_MOUSE: 1
 
   chromium:
     image: mcr.microsoft.com/playwright:v1.53.0-noble
