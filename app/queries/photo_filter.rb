@@ -2,10 +2,11 @@
 # resolved once per request instead of the controller and every view each
 # re-deriving whether params[:favorited] is actually in effect.
 class PhotoFilter
-  attr_reader :tag
+  attr_reader :tag, :page
 
   def initialize(params:, user:)
     @tag = params[:tag].presence
+    @page = params[:page].presence
     @user = user
     @favorited_requested = params[:favorited].present?
   end
@@ -30,12 +31,17 @@ class PhotoFilter
   end
 
   # For propagating the current filter into other links (adjacent photo,
-  # back-to-gallery, …) without each view re-reading raw params.
+  # back-to-gallery, …) without each view re-reading raw params. Carries the
+  # page along too, so "back to photos" from a detail page returns to the
+  # index page it was reached from, not always page 1.
   def to_params
-    { tag: tag, favorited: favorited? ? 1 : nil }
+    { tag: tag, favorited: favorited? ? 1 : nil, page: page }
   end
 
-  # Same tag, opposite favorited state — for the toggle button.
+  # Same tag, opposite favorited state — for the toggle button. Deliberately
+  # drops the page: switching filters changes the result set, so landing on
+  # page 1 of it makes more sense than staying on whatever page number was
+  # showing before.
   def toggled_params
     { tag: tag, favorited: favorited? ? nil : 1 }
   end

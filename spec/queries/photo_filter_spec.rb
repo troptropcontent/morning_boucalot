@@ -11,6 +11,14 @@ RSpec.describe PhotoFilter do
     end
   end
 
+  describe "#page" do
+    it "is the page param, presence-cleaned" do
+      expect(described_class.new(params: { page: "2" }, user: user).page).to eq("2")
+      expect(described_class.new(params: { page: "" }, user: user).page).to be_nil
+      expect(described_class.new(params: {}, user: user).page).to be_nil
+    end
+  end
+
   describe "#favoritable?" do
     it "is true when there's a signed-in user" do
       expect(described_class.new(params: {}, user: user).favoritable?).to be true
@@ -69,14 +77,19 @@ RSpec.describe PhotoFilter do
   end
 
   describe "#to_params" do
-    it "carries the tag and resolved favorited state forward" do
-      expect(described_class.new(params: { tag: "landscape", favorited: "1" }, user: user).to_params)
-        .to eq(tag: "landscape", favorited: 1)
+    it "carries the tag, resolved favorited state and page forward" do
+      expect(described_class.new(params: { tag: "landscape", favorited: "1", page: "2" }, user: user).to_params)
+        .to eq(tag: "landscape", favorited: 1, page: "2")
     end
 
     it "drops favorited when it isn't actually active" do
       expect(described_class.new(params: { favorited: "1" }, user: nil).to_params)
-        .to eq(tag: nil, favorited: nil)
+        .to eq(tag: nil, favorited: nil, page: nil)
+    end
+
+    it "is nil when there's no page param" do
+      expect(described_class.new(params: {}, user: user).to_params)
+        .to eq(tag: nil, favorited: nil, page: nil)
     end
   end
 
@@ -89,6 +102,11 @@ RSpec.describe PhotoFilter do
     it "flips favorited off when currently on" do
       expect(described_class.new(params: { favorited: "1" }, user: user).toggled_params)
         .to eq(tag: nil, favorited: nil)
+    end
+
+    it "drops the page, landing on page 1 of the new result set" do
+      expect(described_class.new(params: { page: "3" }, user: user).toggled_params)
+        .to eq(tag: nil, favorited: 1)
     end
   end
 end
