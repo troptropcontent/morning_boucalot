@@ -146,6 +146,18 @@ RSpec.describe "Photos", type: :request do
     end
   end
 
+  describe "GET /:user_id/photos/new" do
+    before { sign_in(user) }
+
+    it "offers the owner's existing tags as suggestions" do
+      tagged_photo = FactoryBot.create(:photo, user: user)
+      SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature")
+
+      get new_user_photo_path(user)
+      expect(response.body).to include('<option value="nature">')
+    end
+  end
+
   describe "POST /:user_id/photos" do
     before { sign_in(user) }
 
@@ -167,6 +179,14 @@ RSpec.describe "Photos", type: :request do
     it "renders new on failure" do
       post user_photos_path(user), params: { photo: { title: "No file" } }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "still offers tag suggestions when re-rendering after a failure" do
+      tagged_photo = FactoryBot.create(:photo, user: user)
+      SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature")
+
+      post user_photos_path(user), params: { photo: { title: "No file" } }
+      expect(response.body).to include('<option value="nature">')
     end
 
     it "returns 403 when posting to another user's scope" do

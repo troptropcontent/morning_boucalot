@@ -153,8 +153,8 @@
         <%= form_with url: batch_user_photos_path(@owner), method: :patch do |f| %>
           <div class="form-control mb-4">
             <%= f.label :tag_list, "Tags", class: "label" %>
-            <%= f.text_field :tag_list, class: "input input-bordered w-full",
-                placeholder: "landscape, travel", autocomplete: "off" %>
+            <%= render "photos/tag_input", field_name: "tag_list", value: "", tags: @tags,
+                datalist_id: "existing-tags-batch", label_for: "tag_list" %>
             <p class="text-xs text-base-content/50 mt-1">Tags will be added to each selected photo.</p>
           </div>
           <div class="modal-action">

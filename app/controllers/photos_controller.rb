@@ -23,6 +23,7 @@ class PhotosController < ApplicationController
 
   def new
     @photo = Photo.new
+    @tags = @owner.tags
   end
 
   def upload
@@ -41,6 +42,7 @@ class PhotosController < ApplicationController
       else
         format.html do
           @photo = Photo.new
+          @tags = @owner.tags
           flash.now[:alert] = result.errors.join(", ")
           render :new, status: :unprocessable_entity
         end
