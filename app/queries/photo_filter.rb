@@ -45,4 +45,13 @@ class PhotoFilter
   def toggled_params
     { tag: tag, favorited: favorited? ? nil : 1 }
   end
+
+  # Selects `name` as the active tag, or clears it if it's already selected —
+  # single-select, like tapping the same radio option twice. Preserves the
+  # favorited filter and drops the page for the same reason as
+  # #toggled_params. Used for both the tag picker's pills and its "clear"
+  # pill (called with the currently active tag).
+  def tag_selected_params(name)
+    { tag: (tag == name ? nil : name), favorited: favorited? ? 1 : nil }
+  end
 end

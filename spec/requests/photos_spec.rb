@@ -24,6 +24,31 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include("+ Upload")
       end
     end
+
+    context "with tags among the owner's photos" do
+      let!(:tagged_photo) { FactoryBot.create(:photo, user: user) }
+
+      before { SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature, travel") }
+
+      it "renders a pill for each distinct tag" do
+        get user_photos_path(user)
+        expect(response.body).to include(">nature<")
+        expect(response.body).to include(">travel<")
+      end
+
+      it "does not render the tag picker button when the owner has no tags" do
+        get user_photos_path(FactoryBot.create(:user))
+        expect(response.body).not_to include("tag-filter-modal")
+      end
+
+      context "when a tag is active" do
+        it "shows a clear pill and highlights the Tags button" do
+          get user_photos_path(user, tag: "nature")
+          expect(response.body).to include("✕ nature")
+          expect(response.body).not_to include(">nature<") # moved into the clear pill, not the pill list
+        end
+      end
+    end
   end
 
   describe "GET /:user_id/photos/:id" do
