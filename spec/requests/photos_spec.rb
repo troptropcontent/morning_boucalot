@@ -114,6 +114,18 @@ RSpec.describe "Photos", type: :request do
       end
     end
 
+    context "with tags on the photo" do
+      let(:photo) { FactoryBot.create(:photo, user: user) }
+
+      before { SyncPhotoTags.call(photo: photo, tag_list: "nature, travel") }
+
+      it "shows each tag as a link back to the filtered index" do
+        get user_photo_path(user, photo)
+        expect(response.body).to include(user_photos_path(user, tag: "nature"))
+        expect(response.body).to include(user_photos_path(user, tag: "travel"))
+      end
+    end
+
     context "with favorited filter" do
       let!(:fav_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago) }
       let!(:fav_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago) }
