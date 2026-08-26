@@ -28,8 +28,8 @@
 
   <div class="form-control mb-6">
     <%= f.label :tag_list, "Tags", class: "label" %>
-    <%= f.text_field :tag_list, class: "input input-bordered w-full", placeholder: "landscape, travel, portrait" %>
-    <p class="text-xs text-base-content/50 mt-1">Separate tags with commas</p>
+    <%= render "photos/tag_input", field_name: "photo[tag_list]", value: photo.tag_list, tags: tags,
+        datalist_id: "existing-tags", label_for: "photo_tag_list" %>
   </div>
 
   <div class="flex gap-2">

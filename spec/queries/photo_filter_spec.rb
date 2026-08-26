@@ -109,4 +109,31 @@ RSpec.describe PhotoFilter do
         .to eq(tag: nil, favorited: 1)
     end
   end
+
+  describe "#tag_selected_params" do
+    it "selects the given tag when a different one is active" do
+      expect(described_class.new(params: { tag: "landscape" }, user: user).tag_selected_params("nature"))
+        .to eq(tag: "nature", favorited: nil)
+    end
+
+    it "selects the given tag when none is active" do
+      expect(described_class.new(params: {}, user: user).tag_selected_params("nature"))
+        .to eq(tag: "nature", favorited: nil)
+    end
+
+    it "clears the tag when it's already the active one" do
+      expect(described_class.new(params: { tag: "landscape" }, user: user).tag_selected_params("landscape"))
+        .to eq(tag: nil, favorited: nil)
+    end
+
+    it "preserves the favorited filter" do
+      expect(described_class.new(params: { favorited: "1" }, user: user).tag_selected_params("landscape"))
+        .to eq(tag: "landscape", favorited: 1)
+    end
+
+    it "drops the page, landing on page 1 of the new result set" do
+      expect(described_class.new(params: { tag: "landscape", page: "3" }, user: user).tag_selected_params("nature"))
+        .to eq(tag: "nature", favorited: nil)
+    end
+  end
 end

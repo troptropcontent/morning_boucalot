@@ -8,6 +8,28 @@ RSpec.describe User, type: :model do
     it { is_expected.to have_many(:photos) }
     it { is_expected.to have_many(:favorites).dependent(:destroy) }
     it { is_expected.to have_many(:favorite_photos).through(:favorites).source(:photo) }
+    it { is_expected.to have_many(:tags).through(:photos) }
+  end
+
+  describe "#tags" do
+    let(:user) { FactoryBot.create(:user) }
+    let(:other_user) { FactoryBot.create(:user) }
+
+    it "returns each tag once even when attached to several of the user's photos, alphabetically" do
+      landscape = FactoryBot.create(:photo, user: user)
+      travel = FactoryBot.create(:photo, user: user)
+      SyncPhotoTags.call(photo: landscape, tag_list: "landscape, nature")
+      SyncPhotoTags.call(photo: travel, tag_list: "nature, travel")
+
+      expect(user.tags.map(&:name)).to eq(%w[landscape nature travel])
+    end
+
+    it "excludes tags belonging only to another user's photos" do
+      other_photo = FactoryBot.create(:photo, user: other_user)
+      SyncPhotoTags.call(photo: other_photo, tag_list: "landscape")
+
+      expect(user.tags).to be_empty
+    end
   end
 
   describe "validations" do

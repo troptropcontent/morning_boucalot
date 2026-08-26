@@ -8,7 +8,7 @@ class PhotosController < ApplicationController
 
   def index
     photos = @filter.apply(@owner.photos.with_attached_file.recent)
-    @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
+    @tags = @owner.tags
     @pagy, @photos = pagy(photos, limit: 30)
     @favorited_photo_ids = favorited_photo_ids_for(@photos)
   end
@@ -23,6 +23,7 @@ class PhotosController < ApplicationController
 
   def new
     @photo = Photo.new
+    @tags = @owner.tags
   end
 
   def upload
@@ -41,6 +42,7 @@ class PhotosController < ApplicationController
       else
         format.html do
           @photo = Photo.new
+          @tags = @owner.tags
           flash.now[:alert] = result.errors.join(", ")
           render :new, status: :unprocessable_entity
         end

@@ -24,6 +24,31 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include("+ Upload")
       end
     end
+
+    context "with tags among the owner's photos" do
+      let!(:tagged_photo) { FactoryBot.create(:photo, user: user) }
+
+      before { SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature, travel") }
+
+      it "renders a pill for each distinct tag" do
+        get user_photos_path(user)
+        expect(response.body).to include(">nature<")
+        expect(response.body).to include(">travel<")
+      end
+
+      it "does not render the tag picker button when the owner has no tags" do
+        get user_photos_path(FactoryBot.create(:user))
+        expect(response.body).not_to include("tag-filter-modal")
+      end
+
+      context "when a tag is active" do
+        it "shows a clear pill and highlights the Tags button" do
+          get user_photos_path(user, tag: "nature")
+          expect(response.body).to include("✕ nature")
+          expect(response.body).not_to include(">nature<") # moved into the clear pill, not the pill list
+        end
+      end
+    end
   end
 
   describe "GET /:user_id/photos/:id" do
@@ -89,6 +114,28 @@ RSpec.describe "Photos", type: :request do
       end
     end
 
+    context "with tags on the photo" do
+      let(:photo) { FactoryBot.create(:photo, user: user) }
+
+      before { SyncPhotoTags.call(photo: photo, tag_list: "nature, travel") }
+
+      it "shows each tag as a link back to the filtered index" do
+        get user_photo_path(user, photo)
+        expect(response.body).to include(user_photos_path(user, tag: "nature"))
+        expect(response.body).to include(user_photos_path(user, tag: "travel"))
+      end
+
+      it "breaks the tag links out of the photo_details turbo frame" do
+        # Without this, Turbo tries to satisfy the click by finding a
+        # matching #photo_details frame in the index page's response, finds
+        # none, and the link silently does nothing instead of navigating.
+        get user_photo_path(user, photo)
+        tag_link = %r{<a[^>]*href="#{Regexp.escape(user_photos_path(user, tag: "nature"))}"[^>]*>}
+        expect(response.body).to match(tag_link)
+        expect(response.body[tag_link]).to include('data-turbo-frame="_top"')
+      end
+    end
+
     context "with favorited filter" do
       let!(:fav_older)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago) }
       let!(:fav_middle) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago) }
@@ -106,6 +153,18 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include(user_photo_path(user, fav_older, favorited: "1"))
         expect(response.body).not_to include(user_photo_path(user, unfav))
       end
+    end
+  end
+
+  describe "GET /:user_id/photos/new" do
+    before { sign_in(user) }
+
+    it "offers the owner's existing tags as suggestions" do
+      tagged_photo = FactoryBot.create(:photo, user: user)
+      SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature")
+
+      get new_user_photo_path(user)
+      expect(response.body).to include('<option value="nature">')
     end
   end
 
@@ -130,6 +189,14 @@ RSpec.describe "Photos", type: :request do
     it "renders new on failure" do
       post user_photos_path(user), params: { photo: { title: "No file" } }
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "still offers tag suggestions when re-rendering after a failure" do
+      tagged_photo = FactoryBot.create(:photo, user: user)
+      SyncPhotoTags.call(photo: tagged_photo, tag_list: "nature")
+
+      post user_photos_path(user), params: { photo: { title: "No file" } }
+      expect(response.body).to include('<option value="nature">')
     end
 
     it "returns 403 when posting to another user's scope" do

@@ -1,0 +1,23 @@
+<%# locals: (field_name:, value:, tags:, datalist_id:, label_for:)
+    Chip-style tag entry backed by a hidden comma-separated field. A plain
+    <datalist> on that field wouldn't work: picking a suggestion replaces
+    the *entire* input value, wiping out anything typed before the comma —
+    so suggestions are per-chip instead, via a single-value entry field.
+    label_for matches the id Rails' `f.label :tag_list` generates, so that
+    label stays clickable and jumps focus to the visible entry field. %>
+<div data-controller="tag-input">
+  <input type="hidden" name="<%= field_name %>" value="<%= value %>" data-tag-input-target="hidden">
+
+  <div class="flex flex-wrap gap-1.5 mb-2 empty:mb-0" data-tag-input-target="chips"></div>
+
+  <input type="text" id="<%= label_for %>" list="<%= datalist_id %>" autocomplete="off" placeholder="Add a tag…"
+         class="input input-bordered w-full"
+         data-tag-input-target="entry"
+         data-action="keydown->tag-input#keydown change->tag-input#commitPending blur->tag-input#commitPending">
+
+  <datalist id="<%= datalist_id %>">
+    <% tags.each do |tag| %>
+      <option value="<%= tag.name %>">
+    <% end %>
+  </datalist>
+</div>
