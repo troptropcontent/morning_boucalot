@@ -15,7 +15,7 @@
     <% if photo.tags.any? %>
       <div class="flex flex-wrap gap-1.5 mt-2">
         <% photo.tags.each do |tag| %>
-          <%= link_to tag.name, user_photos_path(owner, tag: tag.name), class: "badge badge-outline badge-sm" %>
+          <%= link_to tag.name, user_photos_path(owner, tag: tag.name), class: "badge badge-outline badge-sm", data: { turbo_frame: "_top" } %>
         <% end %>
       </div>
     <% end %>

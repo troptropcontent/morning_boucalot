@@ -124,6 +124,16 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include(user_photos_path(user, tag: "nature"))
         expect(response.body).to include(user_photos_path(user, tag: "travel"))
       end
+
+      it "breaks the tag links out of the photo_details turbo frame" do
+        # Without this, Turbo tries to satisfy the click by finding a
+        # matching #photo_details frame in the index page's response, finds
+        # none, and the link silently does nothing instead of navigating.
+        get user_photo_path(user, photo)
+        tag_link = %r{<a[^>]*href="#{Regexp.escape(user_photos_path(user, tag: "nature"))}"[^>]*>}
+        expect(response.body).to match(tag_link)
+        expect(response.body[tag_link]).to include('data-turbo-frame="_top"')
+      end
     end
 
     context "with favorited filter" do
