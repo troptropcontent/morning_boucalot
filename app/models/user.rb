@@ -9,6 +9,7 @@ class User < ApplicationRecord
   has_many :photos, dependent: :destroy
   has_many :favorites, dependent: :destroy
   has_many :favorite_photos, through: :favorites, source: :photo
+  has_many :tags, -> { distinct.order(:name) }, through: :photos
 
   enum :role, { member: "member", guest: "guest" }
 

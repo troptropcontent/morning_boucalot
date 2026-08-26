@@ -8,7 +8,7 @@ class PhotosController < ApplicationController
 
   def index
     photos = @filter.apply(@owner.photos.with_attached_file.recent)
-    @tags = Tag.joins(:photo_tags => :photo).where(photos: { user_id: @owner.id }).distinct.order(:name)
+    @tags = @owner.tags
     @pagy, @photos = pagy(photos, limit: 30)
     @favorited_photo_ids = favorited_photo_ids_for(@photos)
   end
