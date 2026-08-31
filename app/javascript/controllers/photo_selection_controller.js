@@ -27,20 +27,11 @@ export default class extends Controller {
   }
 
   submitTags(event) {
-    event.preventDefault()
-    const form = event.currentTarget.form
-    form.querySelectorAll(".js-photo-id").forEach(el => el.remove())
-    this.selectedIds.forEach(id => {
-      const input = document.createElement("input")
-      input.type = "hidden"
-      input.name = "photo_ids[]"
-      input.value = id
-      input.className = "js-photo-id"
-      form.appendChild(input)
-    })
-    form.requestSubmit()
-    document.getElementById("batch-tag-modal").close()
-    this.#clearAll()
+    this.#submitBatchForm(event, "batch-tag-modal")
+  }
+
+  submitDelete(event) {
+    this.#submitBatchForm(event)
   }
 
   download({ params: { variant = "original" } = {} }) {
@@ -79,6 +70,23 @@ export default class extends Controller {
   }
 
   // Private
+
+  #submitBatchForm(event, modalId) {
+    event.preventDefault()
+    const form = event.currentTarget.form
+    form.querySelectorAll(".js-photo-id").forEach(el => el.remove())
+    this.selectedIds.forEach(id => {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = "photo_ids[]"
+      input.value = id
+      input.className = "js-photo-id"
+      form.appendChild(input)
+    })
+    form.requestSubmit()
+    if (modalId) document.getElementById(modalId).close()
+    this.#clearAll()
+  }
 
   #toggleCard(card) {
     const id = card.dataset.photoId

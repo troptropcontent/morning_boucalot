@@ -443,4 +443,55 @@ RSpec.describe "Photos", type: :request do
       end
     end
   end
+
+  describe "DELETE /:user_id/photos" do
+    let!(:photos) { FactoryBot.create_list(:photo, 2, user: user) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "destroys the selected photos and redirects" do
+        expect {
+          delete user_photos_path(user), params: { photo_ids: photos.map(&:id) }
+        }.to change(Photo, :count).by(-2)
+        expect(response).to redirect_to(user_photos_path(user))
+      end
+
+      it "removes each deleted photo's card via turbo stream" do
+        delete user_photos_path(user),
+               params: { photo_ids: photos.map(&:id) },
+               headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+        expect(response).to have_http_status(:ok)
+        photos.each do |photo|
+          expect(response.body).to include(%(target="photo_#{photo.id}"))
+        end
+      end
+
+      it "leaves unselected photos of the owner untouched" do
+        untouched = FactoryBot.create(:photo, user: user)
+        delete user_photos_path(user), params: { photo_ids: [ photos.first.id ] }
+        expect(Photo.exists?(untouched.id)).to be true
+      end
+
+      it "redirects with an alert when no photo_ids are given" do
+        delete user_photos_path(user), params: { photo_ids: [] }
+        expect(response).to redirect_to(user_photos_path(user))
+        expect(flash[:alert]).to be_present
+      end
+
+      it "returns 403 when targeting another user's scope" do
+        other_user = FactoryBot.create(:user)
+        delete user_photos_path(other_user), params: { photo_ids: photos.map(&:id) }
+        expect(response).to have_http_status(:forbidden)
+      end
+    end
+
+    context "when not authenticated" do
+      it "redirects to login" do
+        delete user_photos_path(user), params: { photo_ids: photos.map(&:id) }
+        expect(response).to redirect_to(new_session_path)
+      end
+    end
+  end
 end

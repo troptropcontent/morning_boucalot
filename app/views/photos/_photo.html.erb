@@ -1,5 +1,5 @@
 <%# locals: (photo:, owner:, filter:, favorited:) %>
-<div class="relative" data-photo-id="<%= photo.id %>">
+<div id="<%= dom_id(photo) %>" class="relative" data-photo-id="<%= photo.id %>">
 
   <%# Selection overlay %>
   <div class="select-overlay hidden absolute inset-0 z-10 bg-primary/25 pointer-events-none"></div>

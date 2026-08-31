@@ -1,6 +1,6 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch]
+  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch batch_destroy]
   before_action :require_gallery_viewer!, only: %i[download_zip]
   before_action :set_photo, only: %i[show edit update destroy favorite]
   before_action :set_filter, only: %i[index show edit]
@@ -87,6 +87,28 @@ class PhotosController < ApplicationController
       if result.success?
         notice = "Tags added to #{count} photo#{"s" unless count == 1}."
         format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: notice, alert: nil }) }
+        format.html { redirect_to user_photos_path(@owner), notice: notice }
+      else
+        alert = result.errors.join(", ")
+        format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: alert }) }
+        format.html { redirect_to user_photos_path(@owner), alert: alert }
+      end
+    end
+  end
+
+  def batch_destroy
+    result = BatchDeletePhotos.call(owner: @owner, photo_ids: params[:photo_ids])
+
+    count = result.data&.count
+    respond_to do |format|
+      if result.success?
+        notice = "#{count} photo#{"s" unless count == 1} deleted."
+        format.turbo_stream do
+          render turbo_stream: [
+            *result.data.map { |id| turbo_stream.remove(helpers.dom_id(Photo.new(id: id))) },
+            turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: notice, alert: nil })
+          ]
+        end
         format.html { redirect_to user_photos_path(@owner), notice: notice }
       else
         alert = result.errors.join(", ")

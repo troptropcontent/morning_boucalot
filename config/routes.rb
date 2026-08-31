@@ -15,6 +15,7 @@ Rails.application.routes.draw do
         patch :batch
         post :download_zip
       end
+      delete "", action: :batch_destroy, on: :collection
     end
   end
 

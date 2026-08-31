@@ -101,6 +101,11 @@
         <button class="btn btn-primary btn-sm" data-action="photo-selection#openTagModal">
           Add tag
         </button>
+        <%= form_with url: user_photos_path(@owner), method: :delete,
+            data: { turbo_confirm: "Delete the selected photos? This cannot be undone." } do |f| %>
+          <%= f.submit "Delete", class: "btn btn-error btn-sm",
+              data: { action: "click->photo-selection#submitDelete" } %>
+        <% end %>
       <% end %>
       <button class="btn btn-ghost btn-sm" data-action="photo-selection#cancel">
         Cancel
