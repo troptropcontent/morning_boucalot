@@ -18,6 +18,12 @@ RSpec.describe Photo, type: :model do
       photo.file.detach
       expect(photo).not_to be_valid
     end
+
+    it "is valid with only a raw_file attached" do
+      photo.file.detach
+      photo.raw_file.attach(io: File.open(Rails.root.join("spec/fixtures/files/test_raw.raf")), filename: "test_raw.raf")
+      expect(photo).to be_valid
+    end
   end
 
   describe "#tag_list" do
@@ -109,6 +115,28 @@ RSpec.describe Photo, type: :model do
       new_photo = FactoryBot.create(:photo, user: user, taken_at: 1.day.ago)
 
       expect(Photo.recent).to eq([ new_photo, old_photo ])
+    end
+  end
+
+  describe ".published" do
+    it "returns only published photos" do
+      user = FactoryBot.create(:user)
+      published = FactoryBot.create(:photo, user: user)
+      unpublished = FactoryBot.create(:photo, user: user, published: false)
+
+      expect(Photo.published).to include(published)
+      expect(Photo.published).not_to include(unpublished)
+    end
+  end
+
+  describe ".unpublished" do
+    it "returns only unpublished photos" do
+      user = FactoryBot.create(:user)
+      published = FactoryBot.create(:photo, user: user)
+      unpublished = FactoryBot.create(:photo, user: user, published: false)
+
+      expect(Photo.unpublished).to include(unpublished)
+      expect(Photo.unpublished).not_to include(published)
     end
   end
 

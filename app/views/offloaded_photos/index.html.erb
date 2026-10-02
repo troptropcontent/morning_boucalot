@@ -1,0 +1,19 @@
+<div>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold">Offloaded Photos</h1>
+    <p class="text-sm text-base-content/50"><%= @photos.size %> awaiting review</p>
+  </div>
+
+  <% if @photos.empty? %>
+    <div class="text-center py-20 text-base-content/50">
+      <p class="text-lg">Nothing waiting for review.</p>
+      <p class="text-sm mt-1">Shots your camera offloads over FTP will show up here.</p>
+    </div>
+  <% else %>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+      <% @photos.each do |photo| %>
+        <%= render "offloaded_photo", photo: photo, owner: @owner %>
+      <% end %>
+    </div>
+  <% end %>
+</div>

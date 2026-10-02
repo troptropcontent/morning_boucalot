@@ -12,6 +12,13 @@
       <% if authenticated? %>
         <div class="flex-none flex items-center gap-2">
           <% if Current.user.member? %>
+            <% offloaded_count = Current.user.photos.unpublished.count %>
+            <%= link_to user_offloaded_photos_path(Current.user), class: "btn btn-ghost btn-sm gap-1.5" do %>
+              Offloaded
+              <% if offloaded_count.positive? %>
+                <span class="badge badge-primary badge-sm"><%= offloaded_count %></span>
+              <% end %>
+            <% end %>
             <%= link_to upload_user_photos_path(Current.user), class: "btn btn-primary btn-sm" do %>
               + Upload
             <% end %>

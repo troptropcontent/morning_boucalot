@@ -1,0 +1,86 @@
+#!/usr/bin/env bash
+# Idempotent setup for the FTP side of the photo-offload feature.
+# Run this directly ON THE VPS (as root, e.g. via sudo) — not from your
+# dev machine. Safe to re-run: it recreates the user if needed, rewrites
+# vsftpd.conf from config/vsftpd.conf, and restarts the service.
+#
+# Required environment variables:
+#   FTP_SYSTEM_USER     - the OS login the camera uses, e.g. ftpcam
+#   FTP_SYSTEM_PASSWORD - that user's password
+#   FTP_INCOMING_DIR    - where offloaded files land on the host, e.g.
+#                         /srv/ftp_incoming — must match the host side of
+#                         the `volumes:` bind mount in config/deploy.yml
+#   SSL_CERT_FILE       - path to an existing TLS fullchain cert (PEM)
+#   SSL_KEY_FILE        - path to that cert's private key (PEM)
+#
+# Optional:
+#   PASV_MIN_PORT / PASV_MAX_PORT - passive port range (default 30000-30009)
+#
+# Example:
+#   FTP_SYSTEM_USER=ftpcam \
+#   FTP_SYSTEM_PASSWORD='...' \
+#   FTP_INCOMING_DIR=/srv/ftp_incoming \
+#   SSL_CERT_FILE=/etc/letsencrypt/live/example.com/fullchain.pem \
+#   SSL_KEY_FILE=/etc/letsencrypt/live/example.com/privkey.pem \
+#   sudo -E bin/setup_ftp_server
+
+set -euo pipefail
+
+: "${FTP_SYSTEM_USER:?Set FTP_SYSTEM_USER, e.g. ftpcam}"
+: "${FTP_SYSTEM_PASSWORD:?Set FTP_SYSTEM_PASSWORD}"
+: "${FTP_INCOMING_DIR:?Set FTP_INCOMING_DIR, e.g. /srv/ftp_incoming}"
+: "${SSL_CERT_FILE:?Set SSL_CERT_FILE to an existing cert path}"
+: "${SSL_KEY_FILE:?Set SSL_KEY_FILE to the certs private key path}"
+
+PASV_MIN_PORT="${PASV_MIN_PORT:-30000}"
+PASV_MAX_PORT="${PASV_MAX_PORT:-30009}"
+
+if [ "$(id -u)" -ne 0 ]; then
+  echo "Run this as root (sudo -E bin/setup_ftp_server)." >&2
+  exit 1
+fi
+
+if [ ! -f "${SSL_CERT_FILE}" ] || [ ! -f "${SSL_KEY_FILE}" ]; then
+  echo "SSL_CERT_FILE/SSL_KEY_FILE must point at files that already exist." >&2
+  echo "Get a cert onto this server first (e.g. certbot) and pass its paths in." >&2
+  exit 1
+fi
+
+echo "==> Installing vsftpd"
+apt-get update -qq
+apt-get install -y vsftpd curl
+
+echo "==> Detecting this server's public IP for passive mode"
+PASV_ADDRESS="$(curl -s https://ifconfig.me)"
+echo "    using ${PASV_ADDRESS}"
+
+echo "==> Creating the ${FTP_SYSTEM_USER} system user"
+mkdir -p "${FTP_INCOMING_DIR}"
+if id "${FTP_SYSTEM_USER}" &>/dev/null; then
+  usermod -d "${FTP_INCOMING_DIR}" "${FTP_SYSTEM_USER}"
+else
+  useradd -d "${FTP_INCOMING_DIR}" -s /usr/sbin/nologin "${FTP_SYSTEM_USER}"
+fi
+echo "${FTP_SYSTEM_USER}:${FTP_SYSTEM_PASSWORD}" | chpasswd
+chown "${FTP_SYSTEM_USER}:${FTP_SYSTEM_USER}" "${FTP_INCOMING_DIR}"
+
+echo "==> Writing /etc/vsftpd.conf from config/vsftpd.conf"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+sed \
+  -e "s#__FTP_INCOMING_DIR__#${FTP_INCOMING_DIR}#g" \
+  -e "s#__PASV_ADDRESS__#${PASV_ADDRESS}#g" \
+  -e "s#__PASV_MIN_PORT__#${PASV_MIN_PORT}#g" \
+  -e "s#__PASV_MAX_PORT__#${PASV_MAX_PORT}#g" \
+  -e "s#__SSL_CERT_FILE__#${SSL_CERT_FILE}#g" \
+  -e "s#__SSL_KEY_FILE__#${SSL_KEY_FILE}#g" \
+  "${SCRIPT_DIR}/../config/vsftpd.conf" > /etc/vsftpd.conf
+
+echo "==> Restarting vsftpd"
+systemctl enable vsftpd
+systemctl restart vsftpd
+
+echo "==> Done."
+echo "    Open these ports in the VPS firewall if you haven't already:"
+echo "      21 (control) and ${PASV_MIN_PORT}-${PASV_MAX_PORT} (passive data)"
+echo "    Then point the X-E5's FTP settings at this server with FTPES,"
+echo "    user '${FTP_SYSTEM_USER}', and the password you set above."

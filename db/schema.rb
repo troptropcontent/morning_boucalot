@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_13_153902) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_02_140253) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -49,6 +49,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_153902) do
     t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
+  create_table "incoming_photos", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "file_size"
+    t.datetime "ingested_at", null: false
+    t.string "original_filename", null: false
+    t.datetime "updated_at", null: false
+    t.integer "user_id", null: false
+    t.index ["user_id", "ingested_at"], name: "index_incoming_photos_on_user_id_and_ingested_at"
+    t.index ["user_id"], name: "index_incoming_photos_on_user_id"
+  end
+
   create_table "photo_tags", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "photo_id", null: false
@@ -68,6 +79,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_153902) do
     t.decimal "focal_length", precision: 8, scale: 2
     t.integer "height"
     t.integer "iso"
+    t.boolean "published", default: true, null: false
     t.string "shutter_speed"
     t.string "status", default: "pending", null: false
     t.datetime "taken_at", null: false
@@ -75,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_153902) do
     t.datetime "updated_at", null: false
     t.integer "user_id", null: false
     t.integer "width"
+    t.index ["user_id", "published"], name: "index_photos_on_user_id_and_published"
     t.index ["user_id", "taken_at", "created_at"], name: "index_photos_on_user_id_and_taken_at_and_created_at"
     t.index ["user_id"], name: "index_photos_on_user_id"
   end
@@ -108,6 +121,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_13_153902) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "favorites", "photos"
   add_foreign_key "favorites", "users"
+  add_foreign_key "incoming_photos", "users"
   add_foreign_key "photo_tags", "photos"
   add_foreign_key "photo_tags", "tags"
   add_foreign_key "photos", "users"

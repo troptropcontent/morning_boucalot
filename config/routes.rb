@@ -17,6 +17,13 @@ Rails.application.routes.draw do
       end
       delete "", action: :batch_destroy, on: :collection
     end
+
+    resources :offloaded_photos, only: %i[index] do
+      member do
+        patch :publish
+        delete :discard
+      end
+    end
   end
 
   root "home#index"

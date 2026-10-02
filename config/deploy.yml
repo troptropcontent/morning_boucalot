@@ -38,6 +38,11 @@ env:
   clear:
     RAILS_SERVE_STATIC_FILES: "true"
     APP_HOST: <%= ENV.fetch("PRODUCTION_APP_HOST") %>
+    # Where the web/job containers read FTP-offloaded files from. vsftpd
+    # runs directly on the VPS (not in Docker) and writes into the host
+    # folder bind-mounted below at the same container path — see the FTP
+    # setup notes near the bottom of this file.
+    FTP_INCOMING_DIR: /data/ftp_incoming
   secret:
     - RAILS_MASTER_KEY
     - DATABASE_URL
@@ -50,9 +55,33 @@ env:
     - S3_FORCE_PATH_STYLE
     - GMAIL_USERNAME
     - GMAIL_APP_PASSWORD
+    - FTP_INGEST_USER_EMAIL
+
+# Bind-mount the host folder vsftpd writes into, so the app containers can
+# read the same files. Host path (left) is just a convention — pick
+# whatever directory you actually create on the VPS for this.
+volumes:
+  - "/srv/ftp_incoming:/data/ftp_incoming"
 
 # Bridge fingerprinted assets between versions to avoid 404s on in-flight requests.
 # asset_path: /rails/public/assets
+
+# --- FTP setup (not managed by Kamal) ---
+# The X-E5 offload feature needs vsftpd installed directly on the VPS
+# (51.178.142.109), *outside* of Docker/Kamal — run bin/setup_ftp_server
+# on the VPS itself (see that script's header for the required env vars).
+# It's idempotent: re-run it any time config/vsftpd.conf changes, or after
+# rebuilding the VPS from scratch.
+#
+# Still needed after that:
+#   - Open port 21 and the passive port range (default 30000-30009) in the
+#     VPS firewall.
+#   - Point the X-E5's FTP transfer settings (host, port, FTPES, the
+#     username/password you gave the script) at this server.
+#   - Set FTP_INGEST_USER_EMAIL above — the app user (your member
+#     account's email) that offloaded photos get attributed to. This is
+#     unrelated to the FTP login itself; the app never needs that
+#     password, it only reads files that land in the shared folder.
 
 # Aliases are triggered with "bin/kamal <alias>".
 aliases:

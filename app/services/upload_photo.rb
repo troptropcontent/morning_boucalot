@@ -12,7 +12,7 @@ class UploadPhoto < ApplicationService
     photo.file.attach(file)
     photo.file_size = file.size
 
-    if checksum_exists?(photo.file.blob.checksum)
+    if PhotoChecksumExists.call(owner: @user, checksum: photo.file.blob.checksum)
       photo.file.blob.purge
       fail!([ "duplicate" ])
     end
@@ -24,15 +24,5 @@ class UploadPhoto < ApplicationService
     ProcessPhotoJob.perform_later(photo.id)
 
     photo
-  end
-
-  private
-
-  def checksum_exists?(checksum)
-    ActiveStorage::Blob
-      .where(checksum: checksum)
-      .joins(:attachments)
-      .where(active_storage_attachments: { record_type: "Photo", name: "file", record_id: @user.photos.select(:id) })
-      .exists?
   end
 end

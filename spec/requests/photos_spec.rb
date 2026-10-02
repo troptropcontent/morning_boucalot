@@ -51,12 +51,32 @@ RSpec.describe "Photos", type: :request do
     end
   end
 
+  describe "GET /:user_id/photos" do
+    context "with an unpublished (offloaded, not-yet-reviewed) photo" do
+      let!(:unpublished) { FactoryBot.create(:photo, user: user, published: false) }
+      let!(:published) { FactoryBot.create(:photo, user: user, published: true) }
+
+      it "excludes the unpublished photo from the gallery" do
+        get user_photos_path(user)
+        expect(response.body).not_to include(user_photo_path(user, unpublished))
+        expect(response.body).to include(user_photo_path(user, published))
+      end
+    end
+  end
+
   describe "GET /:user_id/photos/:id" do
     let(:photo) { FactoryBot.create(:photo, user: user) }
 
     it "returns 200 without authentication" do
       get user_photo_path(user, photo)
       expect(response).to have_http_status(:ok)
+    end
+
+    it "returns 404 for an unpublished photo, even for the owner" do
+      unpublished = FactoryBot.create(:photo, user: user, published: false)
+      sign_in(user)
+      get user_photo_path(user, unpublished)
+      expect(response).to have_http_status(:not_found)
     end
 
     it "returns 404 for a photo belonging to a different user" do
