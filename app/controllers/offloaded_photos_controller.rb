@@ -4,7 +4,8 @@ class OffloadedPhotosController < ApplicationController
   before_action :set_photo, only: %i[show publish discard]
 
   def index
-    @photos = @owner.photos.unpublished.with_attached_file.with_attached_raw_file.recent
+    photos = @owner.photos.unpublished.with_attached_file.with_attached_raw_file.recent
+    @pagy, @photos = pagy(photos, limit: 30)
   end
 
   def show
@@ -32,7 +33,7 @@ class OffloadedPhotosController < ApplicationController
   end
 
   def set_photo
-    @photo = @owner.photos.unpublished.find(params[:id])
+    @photo = @owner.photos.unpublished.with_attached_file.with_attached_raw_file.find(params[:id])
   end
 
   def require_gallery_owner!
@@ -40,7 +41,7 @@ class OffloadedPhotosController < ApplicationController
   end
 
   def unpublished_photos
-    @owner.photos.unpublished.with_attached_file.recent
+    @owner.photos.unpublished.with_attached_file.with_attached_raw_file.recent
   end
 
   def next_unpublished_photo

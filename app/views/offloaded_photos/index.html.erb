@@ -1,7 +1,7 @@
 <div>
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-xl font-bold">Offloaded Photos</h1>
-    <p class="text-sm text-base-content/50"><%= @photos.size %> awaiting review</p>
+    <p class="text-sm text-base-content/50"><%= @pagy.count %> awaiting review</p>
   </div>
 
   <% if @photos.empty? %>
@@ -15,5 +15,11 @@
         <%= render "offloaded_photo", photo: photo, owner: @owner %>
       <% end %>
     </div>
+
+    <% if @pagy.pages > 1 %>
+      <div class="flex justify-center mt-8">
+        <%= pagy_nav(@pagy) %>
+      </div>
+    <% end %>
   <% end %>
 </div>

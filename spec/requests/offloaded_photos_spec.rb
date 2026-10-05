@@ -16,6 +16,13 @@ RSpec.describe "OffloadedPhotos", type: :request do
         expect(response.body).to include(%(id="photo_#{unpublished.id}"))
         expect(response.body).not_to include(%(id="photo_#{published.id}"))
       end
+
+      it "paginates at 30 photos per page" do
+        FactoryBot.create_list(:photo, 30, user: user, published: false)
+        get user_offloaded_photos_path(user)
+        expect(response.body).to include("31 awaiting review")
+        expect(response.body.scan(%r{id="photo_\d+"}).size).to eq(30)
+      end
     end
 
     context "when not authenticated" do
