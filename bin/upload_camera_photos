@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Run this on your personal Mac with the X-E5 plugged in via USB.
+# Fuji cameras only expose USB as PTP (no mass-storage/card-reader mode),
+# so files are pulled with gphoto2 instead of reading a mounted volume.
+# Downloaded files are FTPed to the same server the camera's own offload
+# would use (see docs/ftp_offload_setup.md) — they land in the Offloaded
+# Photos review queue exactly the same way, so selecting/publishing still
+# happens on the website afterward.
+#
+# --skip-existing (incremental download, by filename) is only safe because
+# the camera's Set Up > Save Data Set-Up > Frame No. is set to Continuous,
+# so DSCF#### never repeats even across a card format. If that ever gets
+# reset, filenames could collide — the checksum-based manifest below is a
+# second line of defense against uploading a same-named-but-different
+# file twice, but won't un-skip a file gphoto2 never downloaded in the
+# first place. Keep Frame No. on Continuous.
+#
+# One-time setup:
+#   brew install gphoto2
+#   security add-generic-password -a ftpcamera -s morning-boucalot-ftp -w 'the-ftp-password'
+#
+# Usage:
+#   bin/upload_camera_photos
+
+set -euo pipefail
+
+FTP_HOST="www.morningboucalot.com"
+FTP_USER="ftpcamera"
+MANIFEST="$HOME/.morning_boucalot_uploaded.txt"
+# Kept between runs (not wiped) so --skip-existing only pulls shots
+# gphoto2 hasn't already pulled from the camera — without this, every run
+# would re-transfer the whole card over USB again.
+STAGING_DIR="$HOME/.morning_boucalot_camera_staging"
+
+mkdir -p "$STAGING_DIR"
+
+FTP_PASSWORD="$(security find-generic-password -a "$FTP_USER" -s morning-boucalot-ftp -w 2>/dev/null)" || {
+  echo "No Keychain entry found. Run this once first:" >&2
+  echo "  security add-generic-password -a ${FTP_USER} -s morning-boucalot-ftp -w 'the-ftp-password'" >&2
+  exit 1
+}
+
+echo "Downloading new files from the camera..."
+(cd "$STAGING_DIR" && gphoto2 --filename "%f.%C" --get-all-files --skip-existing)
+
+touch "$MANIFEST"
+echo "Scanning $STAGING_DIR..."
+
+uploaded=0
+skipped=0
+failed=0
+
+while IFS= read -r -d '' file; do
+  name="$(basename "$file")"
+  checksum="$(shasum -a 256 "$file" | awk '{ print $1 }')"
+
+  if grep -qxF "$checksum" "$MANIFEST"; then
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  echo "Uploading $name..."
+  if curl --ssl-reqd -T "$file" "ftp://${FTP_HOST}/${name}" --user "${FTP_USER}:${FTP_PASSWORD}" -sS; then
+    echo "$checksum" >> "$MANIFEST"
+    uploaded=$((uploaded + 1))
+  else
+    echo "  failed: $name" >&2
+    failed=$((failed + 1))
+  fi
+done < <(find "$STAGING_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.raf' \) -print0)
+
+echo "Done. Uploaded ${uploaded}, skipped ${skipped} already-uploaded, ${failed} failed."
