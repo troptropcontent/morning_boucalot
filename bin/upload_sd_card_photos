@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Run this on your personal Mac, with the X-E5 plugged in as a USB card
+# reader (Connection Mode -> USB card reader) or any SD card reader.
+# Finds JPEG/RAF files on the card and FTPs them to the same server the
+# camera's own offload would use (see docs/ftp_offload_setup.md) — they
+# land in the Offloaded Photos review queue exactly the same way, so
+# selecting/publishing still happens on the website afterward.
+#
+# One-time setup:
+#   brew install curl  # already on macOS, but confirms --ssl-reqd support
+#   security add-generic-password -a ftpcamera -s morning-boucalot-ftp -w 'the-ftp-password'
+#
+# Usage:
+#   bin/upload_sd_card_photos                  # auto-detects /Volumes/*/DCIM
+#   bin/upload_sd_card_photos /Volumes/NIKON/DCIM
+
+set -euo pipefail
+
+FTP_HOST="www.morningboucalot.com"
+FTP_USER="ftpcamera"
+MANIFEST="$HOME/.morning_boucalot_uploaded.txt"
+
+CARD_DIR="${1:-}"
+if [ -z "$CARD_DIR" ]; then
+  shopt -s nullglob
+  matches=(/Volumes/*/DCIM)
+  if [ ! -e "${matches[0]:-}" ]; then
+    echo "No /Volumes/*/DCIM found. Pass the card's DCIM path explicitly." >&2
+    exit 1
+  fi
+  CARD_DIR="${matches[0]}"
+fi
+
+if [ ! -d "$CARD_DIR" ]; then
+  echo "Not a directory: $CARD_DIR" >&2
+  exit 1
+fi
+
+FTP_PASSWORD="$(security find-generic-password -a "$FTP_USER" -s morning-boucalot-ftp -w 2>/dev/null)" || {
+  echo "No Keychain entry found. Run this once first:" >&2
+  echo "  security add-generic-password -a ${FTP_USER} -s morning-boucalot-ftp -w 'the-ftp-password'" >&2
+  exit 1
+}
+
+touch "$MANIFEST"
+echo "Scanning $CARD_DIR..."
+
+uploaded=0
+skipped=0
+failed=0
+
+while IFS= read -r -d '' file; do
+  name="$(basename "$file")"
+  # Keyed by content, not filename: the camera resets DSCF#### numbering
+  # after a card format, so a future card can genuinely produce a
+  # different photo under a name we've already seen.
+  checksum="$(shasum -a 256 "$file" | awk '{ print $1 }')"
+
+  if grep -qxF "$checksum" "$MANIFEST"; then
+    skipped=$((skipped + 1))
+    continue
+  fi
+
+  echo "Uploading $name..."
+  if curl --ssl-reqd -T "$file" "ftp://${FTP_HOST}/${name}" --user "${FTP_USER}:${FTP_PASSWORD}" -sS; then
+    echo "$checksum" >> "$MANIFEST"
+    uploaded=$((uploaded + 1))
+  else
+    echo "  failed: $name" >&2
+    failed=$((failed + 1))
+  fi
+done < <(find "$CARD_DIR" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.raf' \) -print0)
+
+echo "Done. Uploaded ${uploaded}, skipped ${skipped} already-uploaded, ${failed} failed."
