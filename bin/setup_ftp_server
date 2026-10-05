@@ -14,7 +14,13 @@
 #   SSL_KEY_FILE        - path to that cert's private key (PEM)
 #
 # Optional:
-#   PASV_MIN_PORT / PASV_MAX_PORT - passive port range (default 30000-30009)
+#   PASV_MIN_PORT / PASV_MAX_PORT - passive port range (default 30000-30099).
+#                  Each uploaded file needs its own passive port; a bulk
+#                  laptop upload (hundreds of files back to back) can
+#                  exhaust a narrow range mid-transfer ("broken pipe" on
+#                  the client), since a used port can sit in TIME_WAIT for
+#                  ~60s before it's reusable. 100 ports comfortably covers
+#                  that; a single camera shot never needed this many.
 #   FTP_READ_GID - GID that gets read/write access to uploaded files, so the
 #                  Rails job container (bind-mounting this same folder) can
 #                  read and clean them up without the files being world-
@@ -38,7 +44,7 @@ set -euo pipefail
 : "${SSL_KEY_FILE:?Set SSL_KEY_FILE to the certs private key path}"
 
 PASV_MIN_PORT="${PASV_MIN_PORT:-30000}"
-PASV_MAX_PORT="${PASV_MAX_PORT:-30009}"
+PASV_MAX_PORT="${PASV_MAX_PORT:-30099}"
 FTP_READ_GID="${FTP_READ_GID:-1000}"
 
 if [ "$(id -u)" -ne 0 ]; then
