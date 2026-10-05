@@ -1,0 +1,25 @@
+<div class="mb-4">
+  <%= link_to "← Back to offloaded photos", user_offloaded_photos_path(@owner), class: "link link-primary text-sm" %>
+</div>
+
+<%
+  preload_data = {}
+  if @next_photo&.file&.attached?
+    preload_data = { controller: "photo-preload", photo_preload_url_value: url_for(@next_photo.file.variant(:large)) }
+  end
+%>
+<%= tag.div class: "relative", data: preload_data do %>
+  <% if @photo.file.attached? %>
+    <%= image_tag @photo.file.variant(:large), class: "rounded-lg w-full" %>
+  <% else %>
+    <div class="py-20 text-center text-base-content/30 text-sm bg-base-300 rounded-lg">No preview — RAW only</div>
+  <% end %>
+
+  <%= render "shared/photo_nav_arrows",
+      prev_url: @previous_photo ? user_offloaded_photo_path(@owner, @previous_photo) : nil,
+      next_url: @next_photo ? user_offloaded_photo_path(@owner, @next_photo) : nil %>
+<% end %>
+
+<div class="mt-4">
+  <%= render "actions", photo: @photo, owner: @owner, navigate: true %>
+</div>

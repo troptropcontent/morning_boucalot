@@ -14,24 +14,9 @@
     <% if photo.file.attached? %>
       <%= image_tag photo.file.variant(:large), class: "rounded-lg w-full" %>
     <% end %>
-    <% if prev_photo %>
-      <%= link_to user_photo_path(owner, prev_photo, **filter.to_params), class: "absolute left-0 top-0 h-full flex items-center px-2", aria: { label: "Previous photo" } do %>
-        <div class="bg-black/40 rounded-full p-3 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </div>
-      <% end %>
-    <% end %>
-    <% if next_photo %>
-      <%= link_to user_photo_path(owner, next_photo, **filter.to_params), class: "absolute right-0 top-0 h-full flex items-center px-2", aria: { label: "Next photo" } do %>
-        <div class="bg-black/40 rounded-full p-3 text-white">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
-      <% end %>
-    <% end %>
+    <%= render "shared/photo_nav_arrows",
+        prev_url: prev_photo ? user_photo_path(owner, prev_photo, **filter.to_params) : nil,
+        next_url: next_photo ? user_photo_path(owner, next_photo, **filter.to_params) : nil %>
   <% end %>
 
   <%= turbo_frame_tag "photo_details" do %>

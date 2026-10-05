@@ -1,23 +1,19 @@
 <%# locals: (photo:, owner:) %>
 <div id="<%= dom_id(photo) %>" class="flex flex-col gap-2">
-  <div class="aspect-square overflow-hidden bg-base-300 rounded-lg relative">
-    <% if photo.file.attached? %>
-      <%= image_tag photo.file.variant(:thumbnail), class: "w-full h-full object-cover" %>
-    <% else %>
-      <div class="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
-        No preview
-      </div>
-    <% end %>
-    <% if photo.raw_file.attached? %>
-      <span class="badge badge-neutral badge-sm absolute top-1.5 right-1.5">RAW</span>
-    <% end %>
-  </div>
+  <%= link_to user_offloaded_photo_path(owner, photo) do %>
+    <div class="aspect-square overflow-hidden bg-base-300 rounded-lg relative">
+      <% if photo.file.attached? %>
+        <%= image_tag photo.file.variant(:thumbnail), class: "w-full h-full object-cover" %>
+      <% else %>
+        <div class="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
+          No preview
+        </div>
+      <% end %>
+      <% if photo.raw_file.attached? %>
+        <span class="badge badge-neutral badge-sm absolute top-1.5 right-1.5">RAW</span>
+      <% end %>
+    </div>
+  <% end %>
 
-  <div class="flex gap-1.5">
-    <%= button_to "Publish", publish_user_offloaded_photo_path(owner, photo), method: :patch,
-        class: "btn btn-primary btn-sm flex-1" %>
-    <%= button_to "Discard", discard_user_offloaded_photo_path(owner, photo), method: :delete,
-        data: { turbo_confirm: "Discard this photo? This cannot be undone." },
-        class: "btn btn-outline btn-error btn-sm flex-1" %>
-  </div>
+  <%= render "actions", photo: photo, owner: owner %>
 </div>

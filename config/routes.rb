@@ -18,7 +18,7 @@ Rails.application.routes.draw do
       delete "", action: :batch_destroy, on: :collection
     end
 
-    resources :offloaded_photos, only: %i[index] do
+    resources :offloaded_photos, only: %i[index show] do
       member do
         patch :publish
         delete :discard
