@@ -23,7 +23,7 @@ class IngestOffloadedPhotoJob < ApplicationJob
     # not just the attach call — or Active Storage tries to read from an
     # already-closed IO.
     File.open(file_path, "rb") do |io|
-      photo.public_send(attachment_name).attach(io: io, filename: File.basename(file_path))
+      photo.public_send(attachment_name).attach(**attach_options(attachment_name, file_path, io))
 
       if PhotoChecksumExists.call(owner: owner, checksum: photo.public_send(attachment_name).blob.checksum, attachment_name: attachment_name, excluding_photo_id: photo.id)
         purge_attachment(photo, attachment_name)
@@ -43,6 +43,18 @@ class IngestOffloadedPhotoJob < ApplicationJob
   end
 
   private
+
+  # RAF is TIFF-based internally, which fools Active Storage's content-type
+  # sniffing into tagging it as an image — triggering a libvips analysis
+  # job that downloads the whole raw file to local disk just to fail (vips
+  # can't actually decode RAF). Forcing a generic type and skipping
+  # sniffing (identify: false) avoids that entirely; see Photo's raw_file
+  # comment — it was never meant to be analyzed or get variants.
+  def attach_options(attachment_name, file_path, io)
+    options = { io: io, filename: File.basename(file_path) }
+    options.merge!(content_type: "application/octet-stream", identify: false) if attachment_name == :raw_file
+    options
+  end
 
   # Sanity check before File.open/File.delete touch an arbitrary path —
   # cheap insurance against ever acting outside the incoming dir, even
