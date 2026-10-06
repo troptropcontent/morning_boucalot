@@ -25,6 +25,14 @@ RSpec.describe IngestOffloadedPhotoJob do
     destination
   end
 
+  it "serializes jobs for the same filename stem, so a RAF/JPEG pair or a re-scanned duplicate can't run concurrently" do
+    job = described_class.new("/data/ftp_incoming/DSCF0001.JPG")
+    expect(job.concurrency_key).to eq(job.class.name + "/DSCF0001")
+
+    other_extension_job = described_class.new("/data/ftp_incoming/DSCF0001.RAF")
+    expect(other_extension_job.concurrency_key).to eq(job.concurrency_key)
+  end
+
   describe "#perform" do
     context "with a JPEG" do
       it "creates an unpublished photo with the file attached" do
@@ -163,11 +171,11 @@ RSpec.describe IngestOffloadedPhotoJob do
     end
 
     context "with an unrecognized extension" do
-      it "does nothing and leaves the file in place" do
+      it "deletes the file without creating a photo" do
         path = copy_fixture("test_image.jpg", as: "DSCF0015.TXT")
 
         expect { described_class.new.perform(path) }.not_to change(Photo, :count)
-        expect(File.exist?(path)).to be true
+        expect(File.exist?(path)).to be false
       end
     end
   end

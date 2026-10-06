@@ -1,6 +1,15 @@
 class IngestOffloadedPhotoJob < ApplicationJob
   queue_as :default
 
+  # The JPEG and RAF of one shot share a filename stem and are uploaded as
+  # separate FTP transfers, so two worker threads can end up processing them
+  # at the same time. That race let find_pending_pair miss its sibling
+  # (queried before the other's photo.save committed) and let the same
+  # still-present file be re-scanned and ingested twice before the first
+  # attempt finished and deleted it. Serializing by stem fixes both: only
+  # one job per shot filename runs at a time.
+  limits_concurrency to: 1, key: ->(file_path) { File.basename(file_path, ".*") }
+
   RAW_EXTENSIONS = %w[raf].freeze
   JPEG_EXTENSIONS = %w[jpg jpeg].freeze
 
@@ -9,7 +18,10 @@ class IngestOffloadedPhotoJob < ApplicationJob
     return unless within_incoming_dir?(file_path)
 
     attachment_name = attachment_name_for(file_path)
-    return unless attachment_name
+    unless attachment_name
+      File.delete(file_path)
+      return
+    end
 
     owner = find_owner
     return unless owner
@@ -35,10 +47,11 @@ class IngestOffloadedPhotoJob < ApplicationJob
 
       if photo.save
         ProcessPhotoJob.perform_later(photo.id) if attachment_name == :file
-        File.delete(file_path)
       else
         purge_attachment(photo, attachment_name)
       end
+
+      File.delete(file_path)
     end
   end
 
