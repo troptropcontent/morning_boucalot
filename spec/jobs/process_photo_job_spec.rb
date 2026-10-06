@@ -45,5 +45,9 @@ RSpec.describe ProcessPhotoJob do
         expect(photo.reload.status).to eq("failed")
       end
     end
+
+    it "retries on ENOSPC instead of failing permanently on the first attempt" do
+      expect(described_class.rescue_handlers.map(&:first)).to include("Errno::ENOSPC")
+    end
   end
 end

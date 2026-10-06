@@ -96,3 +96,5 @@ group :test do
   gem "selenium-webdriver"
   gem "shoulda-matchers"
 end
+
+gem "solid_cable", "~> 4.1"

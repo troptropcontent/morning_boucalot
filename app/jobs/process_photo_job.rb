@@ -1,6 +1,11 @@
 class ProcessPhotoJob < ApplicationJob
   queue_as :default
 
+  # Disk pressure is transient and extract_exif/warm_variants are safe to
+  # re-run (they just re-derive the same data), so a brief retry window can
+  # recover without manual intervention once space frees up.
+  retry_on Errno::ENOSPC, wait: :polynomially_longer, attempts: 3
+
   def perform(photo_id)
     photo = Photo.find_by(id: photo_id)
     return unless photo&.file&.attached?
