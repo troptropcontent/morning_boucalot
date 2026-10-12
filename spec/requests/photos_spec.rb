@@ -62,6 +62,17 @@ RSpec.describe "Photos", type: :request do
         expect(response.body).to include(user_photo_path(user, published))
       end
     end
+
+    context "with an archived (trashed) photo" do
+      let!(:archived) { FactoryBot.create(:photo, :archived, user: user) }
+      let!(:active) { FactoryBot.create(:photo, user: user) }
+
+      it "excludes the archived photo from the gallery" do
+        get user_photos_path(user)
+        expect(response.body).not_to include(user_photo_path(user, archived))
+        expect(response.body).to include(user_photo_path(user, active))
+      end
+    end
   end
 
   describe "GET /:user_id/photos/:id" do
@@ -271,10 +282,11 @@ RSpec.describe "Photos", type: :request do
 
     before { sign_in(user) }
 
-    it "destroys the photo and redirects" do
+    it "archives the photo instead of destroying it, and redirects" do
       expect {
         delete user_photo_path(user, photo)
-      }.to change(Photo, :count).by(-1)
+      }.to change { photo.reload.archived_at }.from(nil)
+      expect(Photo.exists?(photo.id)).to be true
 
       expect(response).to redirect_to(user_photos_path(user))
     end
@@ -470,10 +482,11 @@ RSpec.describe "Photos", type: :request do
     context "when authenticated as the owner" do
       before { sign_in(user) }
 
-      it "destroys the selected photos and redirects" do
+      it "archives the selected photos instead of destroying them, and redirects" do
         expect {
           delete user_photos_path(user), params: { photo_ids: photos.map(&:id) }
-        }.to change(Photo, :count).by(-2)
+        }.not_to change(Photo, :count)
+        photos.each { |p| expect(p.reload.archived_at).to be_present }
         expect(response).to redirect_to(user_photos_path(user))
       end
 

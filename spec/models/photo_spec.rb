@@ -140,6 +140,28 @@ RSpec.describe Photo, type: :model do
     end
   end
 
+  describe ".active" do
+    it "returns only non-archived photos" do
+      user = FactoryBot.create(:user)
+      active = FactoryBot.create(:photo, user: user)
+      archived = FactoryBot.create(:photo, :archived, user: user)
+
+      expect(Photo.active).to include(active)
+      expect(Photo.active).not_to include(archived)
+    end
+  end
+
+  describe ".archived" do
+    it "returns only archived photos" do
+      user = FactoryBot.create(:user)
+      active = FactoryBot.create(:photo, user: user)
+      archived = FactoryBot.create(:photo, :archived, user: user)
+
+      expect(Photo.archived).to include(archived)
+      expect(Photo.archived).not_to include(active)
+    end
+  end
+
   describe "taken_at defaulting" do
     it "defaults taken_at to now when not provided" do
       photo = FactoryBot.build(:photo, taken_at: nil)

@@ -24,6 +24,16 @@ Rails.application.routes.draw do
         delete :discard
       end
     end
+
+    resources :archived_photos, path: "trash", only: %i[index destroy] do
+      member do
+        patch :restore
+      end
+      collection do
+        patch :batch_restore
+      end
+      delete "", action: :batch_destroy, on: :collection
+    end
   end
 
   mount MissionControl::Jobs::Engine, at: "/jobs"

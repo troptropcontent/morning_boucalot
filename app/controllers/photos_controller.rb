@@ -7,14 +7,14 @@ class PhotosController < ApplicationController
   allow_unauthenticated_access only: %i[index show]
 
   def index
-    photos = @filter.apply(@owner.photos.published.with_attached_file.recent)
+    photos = @filter.apply(@owner.photos.published.active.with_attached_file.recent)
     @tags = @owner.tags
     @pagy, @photos = pagy(photos, limit: 30)
     @favorited_photo_ids = favorited_photo_ids_for(@photos)
   end
 
   def show
-    photos = @filter.apply(@owner.photos.published.with_attached_file.recent)
+    photos = @filter.apply(@owner.photos.published.active.with_attached_file.recent)
     adjacent = FindAdjacentPhotos.call(photo: @photo, scope: photos).data
     @prev_photo = adjacent[:previous_photo]
     @next_photo = adjacent[:next_photo]
@@ -97,12 +97,12 @@ class PhotosController < ApplicationController
   end
 
   def batch_destroy
-    result = BatchDeletePhotos.call(owner: @owner, photo_ids: params[:photo_ids])
+    result = BatchArchivePhotos.call(owner: @owner, photo_ids: params[:photo_ids])
 
     count = result.data&.count
     respond_to do |format|
       if result.success?
-        notice = "#{count} photo#{"s" unless count == 1} deleted."
+        notice = "#{count} photo#{"s" unless count == 1} moved to trash."
         format.turbo_stream do
           render turbo_stream: [
             *result.data.map { |id| turbo_stream.remove(helpers.dom_id(Photo.new(id: id))) },
@@ -147,8 +147,8 @@ class PhotosController < ApplicationController
   end
 
   def destroy
-    DeletePhoto.call(photo: @photo)
-    redirect_to user_photos_path(@owner), notice: "Photo deleted."
+    ArchivePhoto.call(photo: @photo)
+    redirect_to user_photos_path(@owner), notice: "Photo moved to trash."
   end
 
   private
@@ -158,7 +158,7 @@ class PhotosController < ApplicationController
   end
 
   def set_photo
-    @photo = @owner.photos.published.find(params[:id])
+    @photo = @owner.photos.published.active.find(params[:id])
   end
 
   def set_filter

@@ -16,3 +16,6 @@ production:
   scan_ftp_incoming:
     class: ScanFtpIncomingJob
     schedule: every minute
+  purge_archived_photos:
+    class: PurgeArchivedPhotosJob
+    schedule: every day at 4am

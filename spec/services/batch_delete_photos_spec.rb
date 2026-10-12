@@ -2,7 +2,7 @@ require "rails_helper"
 
 RSpec.describe BatchDeletePhotos do
   let(:owner) { FactoryBot.create(:user) }
-  let!(:photos) { FactoryBot.create_list(:photo, 3, user: owner) }
+  let!(:photos) { FactoryBot.create_list(:photo, 3, :archived, user: owner) }
 
   describe ".call" do
     it "destroys all selected photos" do

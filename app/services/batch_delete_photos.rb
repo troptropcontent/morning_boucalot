@@ -7,7 +7,7 @@ class BatchDeletePhotos < ApplicationService
   def call
     fail!([ "No photos selected" ]) if @photo_ids.empty?
 
-    photos = @owner.photos.where(id: @photo_ids)
+    photos = @owner.photos.archived.where(id: @photo_ids)
     fail!([ "No matching photos found" ]) if photos.empty?
 
     ids = photos.pluck(:id)

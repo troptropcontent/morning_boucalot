@@ -20,5 +20,9 @@ FactoryBot.define do
         content_type: "image/jpeg"
       )
     end
+
+    trait :archived do
+      archived_at { 1.day.ago }
+    end
   end
 end

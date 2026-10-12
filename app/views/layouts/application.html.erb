@@ -34,6 +34,11 @@
               </svg>
             </div>
             <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-20 w-40 p-2 shadow-sm mt-3">
+              <% if Current.user.member? %>
+                <li>
+                  <%= link_to "Trash", user_archived_photos_path(Current.user), class: "btn btn-ghost btn-sm justify-start w-full" %>
+                </li>
+              <% end %>
               <li>
                 <%= button_to "Sign out", session_path, method: :delete,
                     form: { class: "contents" }, class: "btn btn-ghost btn-sm justify-start w-full" %>

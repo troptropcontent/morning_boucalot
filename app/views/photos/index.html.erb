@@ -102,8 +102,8 @@
           Add tag
         </button>
         <%= form_with url: user_photos_path(@owner), method: :delete,
-            data: { turbo_confirm: "Delete the selected photos? This cannot be undone." } do |f| %>
-          <%= f.submit "Delete", class: "btn btn-error btn-sm",
+            data: { turbo_confirm: "Move the selected photos to trash?" } do |f| %>
+          <%= f.submit "Move to trash", class: "btn btn-error btn-sm",
               data: { action: "click->photo-selection#submitDelete" } %>
         <% end %>
       <% end %>

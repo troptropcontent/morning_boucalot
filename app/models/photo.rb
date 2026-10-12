@@ -36,6 +36,8 @@ class Photo < ApplicationRecord
   scope :favorited_by, ->(user) { joins(:favorites).where(favorites: { user_id: user&.id }) }
   scope :published, -> { where(published: true) }
   scope :unpublished, -> { where(published: false) }
+  scope :active, -> { where(archived_at: nil) }
+  scope :archived, -> { where.not(archived_at: nil) }
 
   def tag_list
     tags.map(&:name).join(", ")
