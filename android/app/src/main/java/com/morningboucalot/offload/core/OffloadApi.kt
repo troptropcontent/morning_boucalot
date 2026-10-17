@@ -27,13 +27,12 @@ class OffloadApi(
     private val token: String,
     private val client: OkHttpClient = OkHttpClient(),
     allowInsecure: Boolean = false,
-) {
+) : OffloadServer {
     init {
         require(allowInsecure || baseUrl.isHttps) { "server URL must be https" }
     }
 
-    /** Of [checksums] (base64 MD5), returns the ones the server already has. */
-    fun known(checksums: List<String>): Set<String> {
+    override fun known(checksums: List<String>): Set<String> {
         val result = mutableSetOf<String>()
 
         for (chunk in checksums.chunked(MAX_CHECKSUMS_PER_REQUEST)) {
@@ -50,8 +49,7 @@ class OffloadApi(
         return result
     }
 
-    /** Streams [file] (read via [open]) to the server and classifies the answer. */
-    fun upload(file: CardFile, open: () -> InputStream): UploadOutcome {
+    override fun upload(file: CardFile, open: () -> InputStream): UploadOutcome {
         val body = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
             .addFormDataPart("file", file.name, StreamingBody(mediaTypeFor(file), file.size, open))

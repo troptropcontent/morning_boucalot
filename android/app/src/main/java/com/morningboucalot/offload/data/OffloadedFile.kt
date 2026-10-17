@@ -20,6 +20,8 @@ data class OffloadedFile(
     val lastError: String? = null,
     val updatedAt: Long,
 ) {
+    fun toCardFile() = CardFile(folder, name, size, lastModified = 0, uri = uri)
+
     companion object {
         fun pending(file: CardFile, nowMs: Long) = OffloadedFile(
             fileKey = file.key,

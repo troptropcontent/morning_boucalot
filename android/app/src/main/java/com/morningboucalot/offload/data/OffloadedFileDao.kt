@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 data class StatusCount(val status: Status, val count: Int)
@@ -16,6 +17,19 @@ interface OffloadedFileDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(files: List<OffloadedFile>)
+
+    @Update
+    suspend fun update(file: OffloadedFile)
+
+    @Query("SELECT * FROM offloaded_files WHERE status = 'PENDING' ORDER BY fileKey LIMIT :limit")
+    suspend fun pending(limit: Int): List<OffloadedFile>
+
+    @Query("SELECT COUNT(*) FROM offloaded_files WHERE status = 'PENDING'")
+    suspend fun pendingCount(): Int
+
+    /** A run that died mid-file (app killed, card pulled) leaves rows UPLOADING; put them back in line. */
+    @Query("UPDATE offloaded_files SET status = 'PENDING' WHERE status = 'UPLOADING'")
+    suspend fun resetUploading()
 
     @Query("SELECT status, COUNT(*) AS count FROM offloaded_files GROUP BY status")
     fun counts(): Flow<List<StatusCount>>

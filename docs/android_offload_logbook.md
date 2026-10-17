@@ -19,8 +19,10 @@ existing unpublished review queue (`/:user_id/offloaded_photos`).
 - [x] Server: specs green (full suite 371 examples, 0 failures)
 - [x] Decision: native Kotlin app (user confirmed 2026-10-17)
 - [x] Decision: code lives in `android/` in this repo
-- [x] Android app scaffold in `android/` — compiles, 22 JVM unit tests green, debug APK builds
-- [ ] Android app v1 (upload worker, settings screen)
+- [x] Android app scaffold in `android/` (committed `2bbc05d`)
+- [x] Upload worker (`UploadPending` + `UploadWorker`/`UploadScheduler`), settings screen, encrypted token — compiles, 39 JVM unit tests green, lint has no errors, debug APK builds. **Not committed yet.**
+- [ ] First on-device test (folder picker with the real card reader, foreground notification, Wi-Fi constraint)
+- [ ] First run against the real server (only tested against MockWebServer + the Rails request specs)
 - [ ] Update `bin/upload_sd_card_photos` to the filename-based key (optional)
 
 ## Server API (what the app talks to)
@@ -97,8 +99,10 @@ the Gradle download. The Gradle wrapper (8.9) is committed.
 
 ## Next steps
 
-1. Upload worker, retries, notifications.
-2. Settings screen (server URL + token), real-server test, install on phone.
+1. Commit the upload worker work.
+2. Sideload `android/app/build/outputs/apk/debug/app-debug.apk` on the phone; try: pick DCIM on the card, enter server URL + `OFFLOAD_UPLOAD_TOKEN`, scan & upload a few shots. Check they appear in the review queue, and that a second scan queues nothing.
+3. Fix whatever the device turns up. Likely suspects: SAF listing speed on a big card, the notification permission flow, Wi-Fi-only constraint behaviour.
+4. Polish: app icon, a "failed files" list with per-file retry, completion notification, files deleted from the card staying PENDING forever, two-scan size-stability check, instrumented tests, coverage tooling for the JVM tests.
 
 ## Log
 
@@ -135,3 +139,23 @@ the Gradle download. The Gradle wrapper (8.9) is committed.
 - One test failed on first run — a test bug (fake clock of 42ms made the file
   look freshly written), not an app bug. Fixed. 22/22 green; `assembleDebug` OK.
 - Not yet run on a device or emulator.
+
+### 2026-10-17 (upload worker)
+- `upload/UploadPending`: batches of 20 → hash (MD5 b64) → `/check` → mark known
+  as DONE → upload the rest sequentially, writing each state change to Room.
+  Stops (rows stay PENDING) on AUTH (bad token), NETWORK, CARD_UNAVAILABLE
+  (unreadable card / revoked permission, doesn't burn attempts). A file hitting
+  retryable errors 5 times is parked FAILED so it can't block the queue.
+  Rows left UPLOADING by a killed run are reset to PENDING on the next run.
+- `UploadWorker` (WorkManager, foreground service type dataSync, progress
+  notification) maps stop reasons to Result.retry (network, exponential
+  backoff from 30s) / failure (auth) / success (card gone, nothing more to do).
+  `UploadScheduler` uses unique work `offload-upload` with KEEP, constraint
+  UNMETERED (Wi-Fi only, default on) or CONNECTED.
+- `settings/`: `Settings` (SharedPreferences) + `SecretBox` (token encrypted with
+  an AES-GCM key in the Android Keystore; undecryptable → user is asked again).
+  Server URL must be https. `SecretBox` and the worker/UI shell are the
+  parts with no unit tests (need a device).
+- UI: folder picker, URL/token fields, Wi-Fi switch, "Scan card & upload",
+  "Retry pending uploads", per-status counts.
+- Lint: no errors; warnings only (missing icon, outdated deps, backup rules).
