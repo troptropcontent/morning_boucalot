@@ -5,6 +5,8 @@ Rails.application.routes.draw do
   resource :guest_session, only: %i[create edit update destroy]
   resources :passwords, param: :token
 
+  post "offload_uploads", to: "offload_uploads#create"
+
   scope "/:user_id", as: :user do
     resources :photos do
       member do

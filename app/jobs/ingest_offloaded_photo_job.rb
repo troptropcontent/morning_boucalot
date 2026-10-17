@@ -10,64 +10,29 @@ class IngestOffloadedPhotoJob < ApplicationJob
   # one job per shot filename runs at a time.
   limits_concurrency to: 1, key: ->(file_path) { File.basename(file_path, ".*") }
 
-  RAW_EXTENSIONS = %w[raf].freeze
-  JPEG_EXTENSIONS = %w[jpg jpeg].freeze
-
   def perform(file_path)
     return unless File.exist?(file_path)
     return unless within_incoming_dir?(file_path)
 
-    attachment_name = attachment_name_for(file_path)
-    unless attachment_name
-      File.delete(file_path)
-      return
-    end
-
-    owner = find_owner
+    owner = OffloadIngestOwner.find
     return unless owner
-
-    stem = File.basename(file_path, ".*")
-    photo = find_pending_pair(owner, stem, attachment_name) || owner.photos.build(published: false)
 
     # The actual upload to the storage service happens inside photo.save
     # (has_one_attached defers it via an autosave callback for a new
     # record), so the file handle has to stay open across the save call —
     # not just the attach call — or Active Storage tries to read from an
-    # already-closed IO.
+    # already-closed IO. IngestOffloadedPhotoFile's result (success, failure,
+    # or duplicate) doesn't change what happens next: the source file is
+    # done with either way, so it's always removed from the incoming dir
+    # once ingestion has run.
     File.open(file_path, "rb") do |io|
-      photo.public_send(attachment_name).attach(**attach_options(attachment_name, file_path, io))
-
-      if PhotoChecksumExists.call(owner: owner, checksum: photo.public_send(attachment_name).blob.checksum, attachment_name: attachment_name, excluding_photo_id: photo.id)
-        purge_attachment(photo, attachment_name)
-        File.delete(file_path)
-        next
-      end
-
-      photo.file_size = File.size(file_path) if attachment_name == :file
-
-      if photo.save
-        ProcessPhotoJob.perform_later(photo.id) if attachment_name == :file
-      else
-        purge_attachment(photo, attachment_name)
-      end
-
-      File.delete(file_path)
+      IngestOffloadedPhotoFile.call(owner: owner, filename: File.basename(file_path), io: io)
     end
+
+    File.delete(file_path)
   end
 
   private
-
-  # RAF is TIFF-based internally, which fools Active Storage's content-type
-  # sniffing into tagging it as an image — triggering a libvips analysis
-  # job that downloads the whole raw file to local disk just to fail (vips
-  # can't actually decode RAF). Forcing a generic type and skipping
-  # sniffing (identify: false) avoids that entirely; see Photo's raw_file
-  # comment — it was never meant to be analyzed or get variants.
-  def attach_options(attachment_name, file_path, io)
-    options = { io: io, filename: File.basename(file_path) }
-    options.merge!(content_type: "application/octet-stream", identify: false) if attachment_name == :raw_file
-    options
-  end
 
   # Sanity check before File.open/File.delete touch an arbitrary path —
   # cheap insurance against ever acting outside the incoming dir, even
@@ -78,40 +43,5 @@ class IngestOffloadedPhotoJob < ApplicationJob
     return false if incoming_dir.blank?
 
     File.realpath(file_path).start_with?("#{File.realdirpath(incoming_dir)}#{File::SEPARATOR}")
-  end
-
-  def attachment_name_for(file_path)
-    extension = File.extname(file_path).delete_prefix(".").downcase
-    return :raw_file if RAW_EXTENSIONS.include?(extension)
-    return :file if JPEG_EXTENSIONS.include?(extension)
-  end
-
-  def find_owner
-    email = ENV["FTP_INGEST_USER_EMAIL"]
-    return nil if email.blank?
-
-    User.find_by(email_address: email)
-  end
-
-  # The camera sends the JPEG and RAF of one shot as two separate uploads
-  # with the same filename stem, in no guaranteed order — so whichever
-  # arrives second needs to attach onto the Photo the first one created,
-  # not create a sibling record. The review queue is small (a handful of
-  # pending shots at a time), so scanning it in Ruby is simpler and safer
-  # than a multi-table join across two differently-named attachments.
-  def find_pending_pair(owner, stem, missing_name)
-    other_name = missing_name == :file ? :raw_file : :file
-
-    owner.photos.unpublished.detect do |photo|
-      other = photo.public_send(other_name)
-      other.attached? &&
-        !photo.public_send(missing_name).attached? &&
-        File.basename(other.blob.filename.to_s, ".*") == stem
-    end
-  end
-
-  def purge_attachment(photo, attachment_name)
-    attached = photo.public_send(attachment_name)
-    attached.attachment ? attached.purge : attached.blob&.purge
   end
 end

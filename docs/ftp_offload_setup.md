@@ -109,6 +109,36 @@ These fixes are applied on the live VPS already. The `ssl_tlsv1_2` and
 fix and the `sudo env` workaround are VPS-only, nothing to change in the
 repo for those.
 
+## HTTPS upload path (new, running alongside FTP)
+
+`POST /offload_uploads` is a second, independent way to get a shot into the
+same unpublished review queue — built for a future phone-side upload utility
+(Samsung S20, MTP/PTP access to the camera's folder) to replace the laptop
+`bin/upload_camera_photos` script, and to eventually let FTP be retired.
+
+- Auth: `Authorization: Bearer <OFFLOAD_UPLOAD_TOKEN>` — a single shared
+  secret, not per-device. Fails closed (503) if the token isn't configured.
+- Body: multipart `file` param, one file per request (JPEG or RAF).
+- Attributed to the same `FTP_INGEST_USER_EMAIL` owner as the FTP path.
+- Shares all pairing/dedupe/attach logic with the FTP path via
+  `IngestOffloadedPhotoFile` — `IngestOffloadedPhotoJob` (FTP) and
+  `OffloadUploadsController` (HTTPS) are both thin wrappers around it that
+  just supply an IO + filename from a different source.
+- Responses: `201` + `{status: "created", id}` on success, `200` +
+  `{status: "duplicate"}` for a repeat checksum, `422` for an unsupported
+  extension, `503` if the token or owner isn't configured, `401` for a bad
+  token.
+
+**Status:** app code done and tested, nothing deployed/configured on the
+VPS yet (needs `OFFLOAD_UPLOAD_TOKEN` exported and set in `.kamal/secrets`'
+backing env var, then a Kamal deploy). No phone utility exists yet either —
+this endpoint is the target for one.
+
+**Plan:** keep FTP running as-is until the phone utility is built and
+verified working end-to-end against this endpoint. Only then retire vsftpd,
+`ScanFtpIncomingJob`, `config/vsftpd.conf`, `bin/setup_ftp_server`, and the
+FTP section below.
+
 ## Decisions made (and why)
 
 - **Reuse `Photo` with a `published` boolean**, not a separate
@@ -141,8 +171,14 @@ repo for those.
 - `app/models/photo.rb` — `published`/`unpublished` scopes, `raw_file`
   attachment, relaxed validation (file OR raw_file required)
 - `app/jobs/scan_ftp_incoming_job.rb` — polls the incoming folder
-- `app/jobs/ingest_offloaded_photo_job.rb` — pairs JPEG/RAF, dedupes,
-  creates/updates the `Photo` row
+- `app/jobs/ingest_offloaded_photo_job.rb` — FTP-side wrapper: file-system
+  guards + cleanup around `IngestOffloadedPhotoFile`
+- `app/controllers/offload_uploads_controller.rb` — HTTPS-side wrapper:
+  token auth around `IngestOffloadedPhotoFile`
+- `app/services/ingest_offloaded_photo_file.rb` — the actual pairing/
+  dedupe/attach logic, shared by both wrappers above
+- `app/services/offload_ingest_owner.rb` — shared `FTP_INGEST_USER_EMAIL`
+  lookup, used by both wrappers
 - `app/queries/photo_checksum_exists.rb` — shared dedup check (also used
   by `UploadPhoto` now)
 - `app/controllers/offloaded_photos_controller.rb` +

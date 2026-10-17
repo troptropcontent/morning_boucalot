@@ -56,6 +56,7 @@ env:
     - GMAIL_USERNAME
     - GMAIL_APP_PASSWORD
     - FTP_INGEST_USER_EMAIL
+    - OFFLOAD_UPLOAD_TOKEN
 
 # Bind-mount the host folder vsftpd writes into, so the app containers can
 # read the same files. Host path (left) is just a convention — pick
@@ -65,6 +66,15 @@ volumes:
 
 # Bridge fingerprinted assets between versions to avoid 404s on in-flight requests.
 # asset_path: /rails/public/assets
+
+# --- HTTPS offload upload (replacing FTP, see docs/ftp_offload_setup.md) ---
+# POST /offload_uploads with a Bearer <OFFLOAD_UPLOAD_TOKEN> header and a
+# multipart `file` param ingests a shot the same way the FTP path does, into
+# the same unpublished review queue. Needs OFFLOAD_UPLOAD_TOKEN (above) and
+# FTP_INGEST_USER_EMAIL (already set below) -- no other setup. Meant for a
+# phone-side upload utility to call instead of the laptop+FTP script. Kept
+# running alongside FTP for now; FTP gets retired once the phone utility is
+# verified working end-to-end.
 
 # --- FTP setup (not managed by Kamal) ---
 # The X-E5 offload feature needs vsftpd installed directly on the VPS
