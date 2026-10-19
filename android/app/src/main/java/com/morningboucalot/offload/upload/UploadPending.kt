@@ -11,9 +11,11 @@ import java.io.IOException
 import java.io.InputStream
 
 /**
- * Works through the PENDING queue: hash a batch, ask the server which
+ * Works through the PENDING queue: hash a batch of JPEGs, ask the server which
  * checksums it already has (those are marked DONE without uploading), upload
- * the rest one at a time. Every state change is written to the database as it
+ * the rest one at a time. RAFs (~50MB) are neither hashed nor sent through
+ * Rails: they go straight to S3 via a presigned URL, and the server dedupes
+ * them by filename. Every state change is written to the database as it
  * happens, so a killed run resumes where it stopped.
  *
  * Stops early (leaving the remaining rows PENDING) when going on can't help:
@@ -48,8 +50,9 @@ class UploadPending(
             if (batch.isEmpty()) return summary
 
             val hashed = hashAll(batch) ?: return summary.copy(stoppedBecause = StopReason.CARD_UNAVAILABLE)
+            val checksums = hashed.mapNotNull { it.checksum }
             val known = try {
-                server.known(hashed.map { it.checksum!! })
+                if (checksums.isEmpty()) emptySet() else server.known(checksums)
             } catch (e: ApiException) {
                 return summary.copy(stoppedBecause = if (e.code == 401) StopReason.AUTH else StopReason.NETWORK)
             } catch (e: IOException) {
@@ -62,7 +65,12 @@ class UploadPending(
                     summary = summary.copy(duplicates = summary.duplicates + 1)
                 } else {
                     dao.update(row.copy(status = Status.UPLOADING, updatedAt = clock()))
-                    val outcome = server.upload(row.toCardFile()) { open(row.uri) }
+                    val card = row.toCardFile()
+                    val outcome = if (card.extension == "raf") {
+                        server.uploadRaf(card) { open(row.uri) }
+                    } else {
+                        server.upload(card) { open(row.uri) }
+                    }
                     when (outcome) {
                         UploadOutcome.Uploaded -> {
                             finish(row, Status.DONE)
@@ -101,12 +109,14 @@ class UploadPending(
     // Null when the card can't be read (pulled, permission revoked): nothing
     // has been changed yet, so the rows simply stay PENDING for next time.
     private fun hashAll(rows: List<OffloadedFile>): List<OffloadedFile>? = try {
-        rows.map { it.copy(checksum = it.checksum ?: Checksums.base64Md5(open(it.uri))) }
+        rows.map { if (it.isRaw()) it else it.copy(checksum = it.checksum ?: Checksums.base64Md5(open(it.uri))) }
     } catch (e: IOException) {
         null
     } catch (e: SecurityException) {
         null
     }
+
+    private fun OffloadedFile.isRaw() = toCardFile().extension == "raf"
 
     private suspend fun finish(row: OffloadedFile, status: Status, error: String? = null) =
         dao.update(row.copy(status = status, lastError = error, updatedAt = clock()))

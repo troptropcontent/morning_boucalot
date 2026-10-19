@@ -63,6 +63,38 @@ class OffloadApi(
         }
     }
 
+    override fun uploadRaf(file: CardFile, open: () -> InputStream): UploadOutcome = try {
+        presign(file)?.let { put(it, file, open) } ?: UploadOutcome.Duplicate
+    } catch (e: PresignRejected) {
+        e.outcome
+    } catch (e: IOException) {
+        UploadOutcome.Retry(e.message ?: "network error")
+    }
+
+    private class PresignRejected(val outcome: UploadOutcome) : Exception()
+
+    // Null when the server says S3 already has this RAF.
+    private fun presign(file: CardFile): String? {
+        val body = JSONObject().put("filename", file.name).put("size", file.size).toString().toRequestBody(JSON)
+        val request = authorized("raf_uploads/presign").post(body).build()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) throw PresignRejected(UploadOutcome.fromStatus(response.code))
+            val json = JSONObject(response.body!!.string())
+            return if (json.getBoolean("already_uploaded")) null else json.getString("url")
+        }
+    }
+
+    // No bearer token here: the URL carries its own signature, and S3 would
+    // reject a request with an unexpected Authorization header.
+    private fun put(url: String, file: CardFile, open: () -> InputStream): UploadOutcome {
+        val request = Request.Builder().url(url).put(StreamingBody(OCTET_STREAM, file.size, open)).build()
+
+        client.newCall(request).execute().use {
+            return if (it.isSuccessful) UploadOutcome.Uploaded else UploadOutcome.Retry("S3 answered ${it.code}")
+        }
+    }
+
     private fun authorized(path: String): Request.Builder =
         Request.Builder()
             .url(baseUrl.resolve(path) ?: throw IllegalArgumentException("bad path $path"))

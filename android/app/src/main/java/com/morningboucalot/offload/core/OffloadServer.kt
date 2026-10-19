@@ -9,4 +9,7 @@ interface OffloadServer {
 
     /** Streams [file] (read via [open]) to the server and classifies the answer. */
     fun upload(file: CardFile, open: () -> InputStream): UploadOutcome
+
+    /** Sends a RAF straight to S3 through a server-issued presigned URL; Duplicate if S3 already has it. */
+    fun uploadRaf(file: CardFile, open: () -> InputStream): UploadOutcome
 }

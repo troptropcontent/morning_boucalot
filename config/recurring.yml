@@ -19,3 +19,6 @@ production:
   purge_archived_photos:
     class: PurgeArchivedPhotosJob
     schedule: every day at 4am
+  attach_rafs:
+    class: AttachRafsJob
+    schedule: every day at 3am

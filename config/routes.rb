@@ -6,6 +6,7 @@ Rails.application.routes.draw do
   resources :passwords, param: :token
 
   post "offload_uploads", to: "offload_uploads#create"
+  post "raf_uploads/presign", to: "raf_uploads#presign"
   post "offload_uploads/check", to: "offload_upload_checks#create", as: :offload_upload_checks
 
   scope "/:user_id", as: :user do

@@ -94,4 +94,51 @@ class OffloadApiTest {
 
         assertTrue(api.upload(jpeg) { "hello".byteInputStream() } is UploadOutcome.Retry)
     }
+
+    private val raf = CardFile("100_FUJI", "DSCF0001.RAF", 5, 0, "content://card/2")
+
+    @Test fun `uploadRaf presigns with the token then PUTs the file to S3 without it`() {
+        val s3 = MockWebServer().also { it.start() }
+        server.enqueue(MockResponse().setBody("""{"already_uploaded":false,"url":"${s3.url("/put")}"}"""))
+        s3.enqueue(MockResponse().setResponseCode(200))
+
+        val outcome = api.uploadRaf(raf) { "hello".byteInputStream() }
+
+        val presign = server.takeRequest()
+        assertEquals("/raf_uploads/presign", presign.path)
+        assertEquals("Bearer secret", presign.getHeader("Authorization"))
+        assertEquals(JSONObject("""{"filename":"DSCF0001.RAF","size":5}""").toString(), JSONObject(presign.body.readUtf8()).toString())
+        val put = s3.takeRequest()
+        assertEquals("PUT", put.method)
+        assertEquals(null, put.getHeader("Authorization"))
+        assertEquals("hello", put.body.readUtf8())
+        assertEquals(UploadOutcome.Uploaded, outcome)
+        s3.shutdown()
+    }
+
+    @Test fun `uploadRaf skips the PUT when S3 already has the file`() {
+        server.enqueue(MockResponse().setBody("""{"already_uploaded":true}"""))
+
+        assertEquals(UploadOutcome.Duplicate, api.uploadRaf(raf) { "hello".byteInputStream() })
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test fun `uploadRaf maps presign errors and S3 failures`() {
+        val s3 = MockWebServer().also { it.start() }
+        server.enqueue(MockResponse().setResponseCode(401))
+        server.enqueue(MockResponse().setResponseCode(422))
+        server.enqueue(MockResponse().setBody("""{"already_uploaded":false,"url":"${s3.url("/put")}"}"""))
+        s3.enqueue(MockResponse().setResponseCode(403))
+
+        assertEquals(UploadOutcome.AuthFailure, api.uploadRaf(raf) { "hello".byteInputStream() })
+        assertTrue(api.uploadRaf(raf) { "hello".byteInputStream() } is UploadOutcome.PermanentFailure)
+        assertTrue(api.uploadRaf(raf) { "hello".byteInputStream() } is UploadOutcome.Retry)
+        s3.shutdown()
+    }
+
+    @Test fun `uploadRaf retries when the server cannot be reached`() {
+        server.shutdown()
+
+        assertTrue(api.uploadRaf(raf) { "hello".byteInputStream() } is UploadOutcome.Retry)
+    }
 }

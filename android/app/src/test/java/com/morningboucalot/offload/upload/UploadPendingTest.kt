@@ -23,12 +23,19 @@ class UploadPendingTest {
         var knownError: Exception? = null
         var outcomeFor: (String) -> UploadOutcome = { UploadOutcome.Uploaded }
         val uploaded = mutableListOf<String>()
+        val rafUploaded = mutableListOf<String>()
         val knownCalls = mutableListOf<List<String>>()
 
         override fun known(checksums: List<String>): Set<String> {
             knownCalls += checksums
             knownError?.let { throw it }
             return checksums.filter { it in known }.toSet()
+        }
+
+        override fun uploadRaf(file: CardFile, open: () -> InputStream): UploadOutcome {
+            rafUploaded += file.name
+            open().close()
+            return outcomeFor(file.name)
         }
 
         override fun upload(file: CardFile, open: () -> InputStream): UploadOutcome {
@@ -236,5 +243,30 @@ class UploadPendingTest {
 
         assertEquals(UploadPending.Summary(), summary)
         assertNull(summary.stoppedBecause)
+    }
+
+    @Test fun `RAFs skip hashing and the checksum check and go through uploadRaf`() {
+        pending("DSCF0001.RAF", "DSCF0002.JPG")
+        val opened = mutableListOf<String>()
+        open = { opened += it; it.toByteArray().inputStream() }
+
+        val summary = run()
+
+        assertEquals(UploadPending.Summary(uploaded = 2), summary)
+        assertEquals(listOf("DSCF0001.RAF"), server.rafUploaded)
+        assertEquals(listOf("DSCF0002.JPG"), server.uploaded)
+        assertEquals(listOf(listOf(checksumOf("DSCF0002.JPG"))), server.knownCalls)
+        assertNull(dao.row("DSCF0001.RAF").checksum)
+        assertEquals(Status.DONE, dao.row("DSCF0001.RAF").status)
+        // Opened once, by the upload itself: no hashing pass over the 50MB file.
+        assertEquals(1, opened.count { it == uri("DSCF0001.RAF") })
+    }
+
+    @Test fun `a batch of only RAFs never asks the server for known checksums`() {
+        pending("DSCF0001.RAF")
+
+        run()
+
+        assertEquals(emptyList<List<String>>(), server.knownCalls)
     }
 }
