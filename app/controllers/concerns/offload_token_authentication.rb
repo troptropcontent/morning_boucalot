@@ -8,6 +8,7 @@ module OffloadTokenAuthentication
 
   included do
     skip_before_action :resume_session, :require_authentication
+    skip_before_action :verify_authenticity_token
     before_action :authenticate_upload_token!
   end
 
