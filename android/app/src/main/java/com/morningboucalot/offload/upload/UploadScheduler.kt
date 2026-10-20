@@ -10,7 +10,7 @@ import androidx.work.WorkManager
 import java.util.concurrent.TimeUnit
 
 object UploadScheduler {
-    private const val UNIQUE_NAME = "offload-upload"
+    const val UNIQUE_NAME = "offload-upload"
 
     /**
      * Queues one upload run. A run already waiting or running is kept rather

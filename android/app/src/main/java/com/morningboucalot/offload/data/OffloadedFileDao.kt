@@ -31,6 +31,10 @@ interface OffloadedFileDao {
     @Query("UPDATE offloaded_files SET status = 'PENDING' WHERE status = 'UPLOADING'")
     suspend fun resetUploading()
 
+    /** Keeps URI fresh after MTP session resets between uses. */
+    @Query("UPDATE offloaded_files SET uri = :uri WHERE fileKey = :fileKey")
+    suspend fun refreshUri(fileKey: String, uri: String)
+
     @Query("SELECT status, COUNT(*) AS count FROM offloaded_files GROUP BY status")
     fun counts(): Flow<List<StatusCount>>
 }

@@ -17,8 +17,11 @@ class ScanCard(
 ) {
     suspend fun run(): ScanPlanner.Plan {
         val now = clock()
-        val plan = ScanPlanner.plan(listFiles(), dao.allKeys().toSet(), now)
+        val files = listFiles()
+        val plan = ScanPlanner.plan(files, dao.allKeys().toSet(), now)
         dao.insertAll(plan.toQueue.map { OffloadedFile.pending(it, now) })
+        // Refresh URIs for all files already in the DB — MTP reassigns URIs each session.
+        for (file in files) dao.refreshUri(file.key, file.uri)
         return plan
     }
 }

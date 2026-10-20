@@ -10,10 +10,6 @@ import java.util.concurrent.TimeUnit
 class Settings(context: Context, private val secrets: SecretBox = SecretBox()) {
     private val prefs = context.applicationContext.getSharedPreferences("offload", Context.MODE_PRIVATE)
 
-    var treeUri: String?
-        get() = prefs.getString(KEY_TREE_URI, null)
-        set(value) = prefs.edit().putString(KEY_TREE_URI, value).apply()
-
     var serverUrl: String
         get() = prefs.getString(KEY_SERVER_URL, "") ?: ""
         set(value) = prefs.edit().putString(KEY_SERVER_URL, value).apply()
@@ -25,6 +21,10 @@ class Settings(context: Context, private val secrets: SecretBox = SecretBox()) {
     var wifiOnly: Boolean
         get() = prefs.getBoolean(KEY_WIFI_ONLY, true)
         set(value) = prefs.edit().putBoolean(KEY_WIFI_ONLY, value).apply()
+
+    var lastUploadError: String?
+        get() = prefs.getString(KEY_LAST_ERROR, null)
+        set(value) = prefs.edit().putString(KEY_LAST_ERROR, value).apply()
 
     /** Null until a valid https server URL and a token have been saved. */
     fun api(): OffloadApi? {
@@ -41,9 +41,9 @@ class Settings(context: Context, private val secrets: SecretBox = SecretBox()) {
     }
 
     private companion object {
-        const val KEY_TREE_URI = "tree_uri"
         const val KEY_SERVER_URL = "server_url"
         const val KEY_TOKEN = "token"
         const val KEY_WIFI_ONLY = "wifi_only"
+        const val KEY_LAST_ERROR = "last_upload_error"
     }
 }

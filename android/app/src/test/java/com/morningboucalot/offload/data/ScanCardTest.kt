@@ -30,4 +30,14 @@ class ScanCardTest {
         assertEquals(1, plan.alreadyKnown)
         assertEquals(1, dao.rows.size)
     }
+
+    @Test fun `a later scan refreshes the URI of an already-known file`() = runBlocking {
+        val dao = FakeOffloadedFileDao()
+        ScanCard({ listOf(card("DSCF0001.JPG")) }, dao).run()
+        dao.rows = dao.rows.map { it.copy(uri = "content://card/stale") }
+
+        ScanCard({ listOf(card("DSCF0001.JPG")) }, dao).run()
+
+        assertEquals("content://card/DSCF0001.JPG", dao.rows.single().uri)
+    }
 }

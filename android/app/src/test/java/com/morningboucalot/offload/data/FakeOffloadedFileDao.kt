@@ -23,6 +23,10 @@ class FakeOffloadedFileDao(var rows: List<OffloadedFile> = emptyList()) : Offloa
         rows = rows.map { if (it.status == Status.UPLOADING) it.copy(status = Status.PENDING) else it }
     }
 
+    override suspend fun refreshUri(fileKey: String, uri: String) {
+        rows = rows.map { if (it.fileKey == fileKey) it.copy(uri = uri) else it }
+    }
+
     override fun counts(): Flow<List<StatusCount>> = emptyFlow()
 
     fun row(name: String) = rows.single { it.name == name }

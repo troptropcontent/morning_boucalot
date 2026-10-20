@@ -30,10 +30,17 @@ class UploadWorker(context: Context, params: WorkerParameters) : CoroutineWorker
             }
         }
 
+        val stopMsg = when (summary.stoppedBecause) {
+            UploadPending.StopReason.NETWORK -> "Network error — will retry"
+            UploadPending.StopReason.AUTH -> "Auth failed — check token"
+            UploadPending.StopReason.CARD_UNAVAILABLE -> "Card unavailable — reconnect and retry"
+            null -> null
+        }
+        Settings(applicationContext).lastUploadError = stopMsg
+
         return when (summary.stoppedBecause) {
             UploadPending.StopReason.NETWORK -> Result.retry()
             UploadPending.StopReason.AUTH -> Result.failure()
-            // Nothing more to do until the card is back; the next scan/upload tap resumes.
             UploadPending.StopReason.CARD_UNAVAILABLE, null -> Result.success()
         }
     }
