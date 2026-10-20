@@ -1,0 +1,6 @@
+<%# locals: (photo:) %>
+<%= tag.div id: dom_id(photo, :image) do %>
+  <% if photo.file.attached? %>
+    <%= image_tag photo.image_variant(:large), class: "rounded-lg w-full" %>
+  <% end %>
+<% end %>

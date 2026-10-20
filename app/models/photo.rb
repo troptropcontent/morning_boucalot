@@ -1,10 +1,17 @@
 class Photo < ApplicationRecord
+  # Not declared as named variants on the attachment: those are static, while
+  # every variant here must also carry the photo's own edits (see
+  # #image_variant). For an unedited photo the transformations are identical
+  # to what the named variants produced, so existing cached variants are
+  # reused rather than regenerated.
+  VARIANTS = {
+    thumbnail: { resize_to_fill: [ 300, 300 ] },
+    medium: { resize_to_limit: [ 800, 600 ] },
+    large: { resize_to_limit: [ 2400, 2400 ] }
+  }.freeze
+
   belongs_to :user
-  has_one_attached :file do |attachable|
-    attachable.variant :thumbnail, resize_to_fill: [300, 300]
-    attachable.variant :medium, resize_to_limit: [800, 600]
-    attachable.variant :large, resize_to_limit: [2400, 2400]
-  end
+  has_one_attached :file
   # The RAF counterpart of a camera-offloaded shot. No variants: raw files
   # aren't readable by image_processing/libvips or EXIFR, so this is stored
   # for download only.
@@ -21,6 +28,7 @@ class Photo < ApplicationRecord
   # the JPEG, so at least one of the two is required rather than `file`
   # specifically.
   validate :file_or_raw_file_present
+  validates :rotation, inclusion: { in: PhotoEdits::ROTATIONS }
 
   # Photos without EXIF data (or non-JPEGs) never get a taken_at from
   # ProcessPhotoJob, so we default it to the upload time. This keeps taken_at
@@ -45,6 +53,14 @@ class Photo < ApplicationRecord
 
   def favorited_by?(user)
     user.present? && favorited_by_users.include?(user)
+  end
+
+  def edits
+    PhotoEdits.new(rotation: rotation, width: width, height: height)
+  end
+
+  def image_variant(name)
+    file.variant(edits.transformations.merge(VARIANTS.fetch(name)))
   end
 
   private

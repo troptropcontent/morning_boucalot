@@ -16,9 +16,8 @@ RSpec.describe ProcessPhotoJob do
       end
 
       it "pre-warms image variants" do
+        expect(WarmPhotoVariants).to receive(:call).with(photo: photo).and_call_original
         described_class.new.perform(photo.id)
-        expect(photo.file.variant(:thumbnail).processed).to be_present
-        expect(photo.file.variant(:medium).processed).to be_present
       end
     end
 

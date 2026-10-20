@@ -3,7 +3,7 @@
   <%= link_to user_offloaded_photo_path(owner, photo) do %>
     <div class="aspect-square overflow-hidden bg-base-300 rounded-lg relative">
       <% if photo.file.attached? %>
-        <%= image_tag photo.file.variant(:thumbnail), class: "w-full h-full object-cover" %>
+        <%= image_tag photo.image_variant(:thumbnail), class: "w-full h-full object-cover" %>
       <% else %>
         <div class="w-full h-full flex items-center justify-center text-base-content/30 text-sm">
           No preview

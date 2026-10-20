@@ -96,6 +96,23 @@ RSpec.describe "Photos", type: :request do
       expect(response).to have_http_status(:not_found)
     end
 
+    it "shows the rotate buttons to the owner" do
+      sign_in(user)
+      get user_photo_path(user, photo)
+      expect(response.body).to include(%(aria-label="Rotate left"), %(aria-label="Rotate right"))
+    end
+
+    it "hides the rotate buttons from visitors" do
+      get user_photo_path(user, photo)
+      expect(response.body).not_to include("Rotate left")
+    end
+
+    it "shows the rotated image for a rotated photo" do
+      photo.update!(rotation: 90)
+      get user_photo_path(user, photo)
+      expect(response.body).to include(%(id="image_photo_#{photo.id}"))
+    end
+
     context "with adjacent photos" do
       let!(:older_photo)  { FactoryBot.create(:photo, user: user, taken_at: 2.days.ago) }
       let!(:middle_photo) { FactoryBot.create(:photo, user: user, taken_at: 1.day.ago) }
@@ -404,6 +421,66 @@ RSpec.describe "Photos", type: :request do
         expect(response).to have_http_status(:unauthorized)
         expect(response.content_type).to include("text/vnd.turbo-stream.html")
         expect(response.body).to include("You must be logged in to do that.")
+      end
+    end
+  end
+
+  describe "PATCH /:user_id/photos/:id/rotate" do
+    let(:photo) { FactoryBot.create(:photo, user: user) }
+    let(:turbo_stream) { { "Accept" => "text/vnd.turbo-stream.html" } }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "rotates the photo and replaces its image via turbo stream" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "clockwise" }, headers: turbo_stream
+
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to include("text/vnd.turbo-stream.html")
+        expect(response.body).to include(%(target="image_photo_#{photo.id}"))
+        expect(photo.reload.rotation).to eq(90)
+      end
+
+      it "redirects back to the photo on html format" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "counterclockwise" }
+
+        expect(response).to redirect_to(user_photo_path(user, photo))
+        expect(photo.reload.rotation).to eq(270)
+      end
+
+      it "flashes an error via turbo stream for an unknown direction" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "sideways" }, headers: turbo_stream
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.body).to include("Unknown rotation direction")
+        expect(photo.reload.rotation).to eq(0)
+      end
+
+      it "redirects with an alert on html format for an unknown direction" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "sideways" }
+
+        expect(response).to redirect_to(user_photo_path(user, photo))
+        expect(flash[:alert]).to eq("Unknown rotation direction")
+      end
+    end
+
+    context "when authenticated as a different user" do
+      it "is forbidden and leaves the photo untouched" do
+        sign_in(FactoryBot.create(:user))
+
+        patch rotate_user_photo_path(user, photo), params: { direction: "clockwise" }
+
+        expect(response).to have_http_status(:forbidden)
+        expect(photo.reload.rotation).to eq(0)
+      end
+    end
+
+    context "when not authenticated" do
+      it "redirects to login" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "clockwise" }
+
+        expect(response).to redirect_to(new_session_path)
+        expect(photo.reload.rotation).to eq(0)
       end
     end
   end

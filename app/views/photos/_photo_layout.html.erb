@@ -6,14 +6,12 @@
 <%
   preload_data = {}
   if next_photo&.file&.attached?
-    preload_data = { controller: "photo-preload", photo_preload_url_value: url_for(next_photo.file.variant(:large)) }
+    preload_data = { controller: "photo-preload", photo_preload_url_value: url_for(next_photo.image_variant(:large)) }
   end
 %>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
   <%= tag.div class: "lg:col-span-2 relative", data: preload_data do %>
-    <% if photo.file.attached? %>
-      <%= image_tag photo.file.variant(:large), class: "rounded-lg w-full" %>
-    <% end %>
+    <%= render "photos/image", photo: photo %>
     <%= render "shared/photo_nav_arrows",
         prev_url: prev_photo ? user_photo_path(owner, prev_photo, **filter.to_params) : nil,
         next_url: next_photo ? user_photo_path(owner, next_photo, **filter.to_params) : nil %>

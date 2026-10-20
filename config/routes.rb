@@ -13,6 +13,7 @@ Rails.application.routes.draw do
     resources :photos do
       member do
         patch :favorite
+        patch :rotate
       end
       collection do
         get :upload

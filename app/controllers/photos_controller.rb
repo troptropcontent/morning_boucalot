@@ -1,8 +1,8 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch batch_destroy]
+  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch batch_destroy rotate]
   before_action :require_gallery_viewer!, only: %i[download_zip]
-  before_action :set_photo, only: %i[show edit update destroy favorite]
+  before_action :set_photo, only: %i[show edit update destroy favorite rotate]
   before_action :set_filter, only: %i[index show edit]
   allow_unauthenticated_access only: %i[index show]
 
@@ -130,6 +130,23 @@ class PhotosController < ApplicationController
         )
       end
       format.html { redirect_back_or_to user_photo_path(@owner, @photo) }
+    end
+  end
+
+  def rotate
+    result = RotatePhoto.call(photo: @photo, direction: params[:direction])
+
+    respond_to do |format|
+      if result.success?
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace(helpers.dom_id(@photo, :image), partial: "photos/image", locals: { photo: @photo })
+        end
+        format.html { redirect_to user_photo_path(@owner, @photo) }
+      else
+        alert = result.errors.join(", ")
+        format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: alert }), status: :unprocessable_entity }
+        format.html { redirect_to user_photo_path(@owner, @photo), alert: alert }
+      end
     end
   end
 

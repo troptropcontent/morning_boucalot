@@ -31,7 +31,7 @@ class DownloadPhotos < ApplicationService
     if @variant == :original
       photo.file.blob.open(&block)
     else
-      photo.file.variant(@variant).processed.image.blob.open(&block)
+      photo.image_variant(@variant).processed.image.blob.open(&block)
     end
   end
 

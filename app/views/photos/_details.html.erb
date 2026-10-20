@@ -64,7 +64,7 @@
 
   <div class="divider"></div>
 
-  <div class="flex gap-2 items-center">
+  <div class="flex flex-wrap gap-2 items-center">
     <%= render "photos/favorite_button", photo: photo, owner: owner, favorited: favorited %>
     <% if photo.file.attached? %>
       <div class="dropdown dropdown-top">
@@ -84,7 +84,7 @@
             <% end %>
           </li>
           <li>
-            <%= link_to rails_representation_path(photo.file.variant(:large), disposition: "attachment"), data: { turbo: false } do %>
+            <%= link_to rails_representation_path(photo.image_variant(:large), disposition: "attachment"), data: { turbo: false } do %>
               <div>
                 <span class="font-medium">Web / Social</span>
                 <span class="text-xs text-base-content/60 block">Optimised, up to 2400px</span>
@@ -96,6 +96,10 @@
     <% end %>
     <% if gallery_policy(owner).owner? %>
       <%= link_to "Edit", edit_user_photo_path(owner, photo), class: "btn btn-outline btn-sm", data: { turbo_action: "advance" } %>
+      <% if photo.file.attached? %>
+        <%= render "photos/rotate_button", photo: photo, owner: owner, direction: "counterclockwise" %>
+        <%= render "photos/rotate_button", photo: photo, owner: owner, direction: "clockwise" %>
+      <% end %>
       <%= button_to "Move to trash", user_photo_path(owner, photo), method: :delete,
           data: { turbo_confirm: "Move this photo to trash?", turbo_frame: "_top" },
           class: "btn btn-error btn-sm" %>

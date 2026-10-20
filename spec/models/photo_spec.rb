@@ -19,6 +19,19 @@ RSpec.describe Photo, type: :model do
       expect(photo).not_to be_valid
     end
 
+    it "accepts quarter-turn rotations" do
+      PhotoEdits::ROTATIONS.each do |rotation|
+        photo.rotation = rotation
+        expect(photo).to be_valid
+      end
+    end
+
+    it "rejects other rotations" do
+      photo.rotation = 45
+      expect(photo).not_to be_valid
+      expect(photo.errors[:rotation]).to be_present
+    end
+
     it "is valid with only a raw_file attached" do
       photo.file.detach
       photo.raw_file.attach(io: File.open(Rails.root.join("spec/fixtures/files/test_raw.raf")), filename: "test_raw.raf")
@@ -159,6 +172,60 @@ RSpec.describe Photo, type: :model do
 
       expect(Photo.archived).to include(archived)
       expect(Photo.archived).not_to include(active)
+    end
+  end
+
+  describe "#edits" do
+    it "builds edits from the photo's rotation and original dimensions" do
+      photo.assign_attributes(rotation: 90, width: 4000, height: 3000)
+
+      expect(photo.edits.rotation).to eq(90)
+      expect(photo.edits.dimensions).to eq([ 3000, 4000 ])
+    end
+  end
+
+  describe "#image_variant" do
+    def operations(variant)
+      variant.variation.transformations.except(:format).to_a
+    end
+
+    it "uses the plain resize for an unedited photo" do
+      expect(operations(photo.image_variant(:thumbnail))).to eq([ [ :resize_to_fill, [ 300, 300 ] ] ])
+    end
+
+    # Named variants on the attachment resolve to the same blob.variant call,
+    # so an unedited photo's variants keep their digest across the switch.
+    it "keeps the variant digest the former named variants used, so cached variants are reused" do
+      former = photo.file.blob.variant(resize_to_limit: [ 2400, 2400 ])
+      expect(photo.image_variant(:large).variation.digest).to eq(former.variation.digest)
+    end
+
+    it "rotates before resizing when the photo is rotated" do
+      photo.rotation = 90
+
+      expect(operations(photo.image_variant(:thumbnail))).to eq([ [ :rotate, 90 ], [ :resize_to_fill, [ 300, 300 ] ] ])
+    end
+
+    it "produces a distinct variant per rotation" do
+      unrotated_key = photo.image_variant(:large).variation.key
+      photo.rotation = 180
+
+      expect(photo.image_variant(:large).variation.key).not_to eq(unrotated_key)
+    end
+
+    it "actually rotates the generated image" do
+      photo.rotation = 90
+      photo.save!
+
+      # The 5152x7728 fixture becomes 7728x5152, then fits 800x600 by width.
+      # Resizing first would give 400x600 turned into 600x400 instead.
+      image = photo.image_variant(:medium).processed.image
+      image.analyze
+      expect(image.metadata.values_at(:width, :height)).to eq([ 800, 533 ])
+    end
+
+    it "raises on an unknown variant name" do
+      expect { photo.image_variant(:huge) }.to raise_error(KeyError)
     end
   end
 

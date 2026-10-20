@@ -5,14 +5,14 @@
 <%
   preload_data = {}
   if @next_photo&.file&.attached?
-    preload_data = { controller: "photo-preload", photo_preload_url_value: url_for(@next_photo.file.variant(:large)) }
+    preload_data = { controller: "photo-preload", photo_preload_url_value: url_for(@next_photo.image_variant(:large)) }
   end
 %>
 <%= tag.div class: "md:flex md:justify-center", data: preload_data do %>
   <div class="md:inline-block">
     <div class="relative">
       <% if @photo.file.attached? %>
-        <%= image_tag @photo.file.variant(:large),
+        <%= image_tag @photo.image_variant(:large),
             class: "rounded-lg w-full md:w-auto md:max-h-[calc(100vh-13rem)] md:object-contain" %>
       <% else %>
         <div class="py-20 text-center text-base-content/30 text-sm bg-base-300 rounded-lg">No preview — RAW only</div>

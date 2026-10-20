@@ -1,7 +1,7 @@
 class ProcessPhotoJob < ApplicationJob
   queue_as :default
 
-  # Disk pressure is transient and extract_exif/warm_variants are safe to
+  # Disk pressure is transient and EXIF extraction/variant warming are safe to
   # re-run (they just re-derive the same data), so a brief retry window can
   # recover without manual intervention once space frees up.
   retry_on Errno::ENOSPC, wait: :polynomially_longer, attempts: 3
@@ -12,7 +12,7 @@ class ProcessPhotoJob < ApplicationJob
     
     
     extract_exif(photo)
-    warm_variants(photo)
+    WarmPhotoVariants.call(photo: photo)
     photo.ready!
 
     broadcast_details(photo)
@@ -29,12 +29,6 @@ class ProcessPhotoJob < ApplicationJob
     photo.file.open do |tempfile|
       exif = ExtractExifData.call(tempfile.path)
       photo.update_columns(exif) if exif.any?
-    end
-  end
-
-  def warm_variants(photo)
-    %i[thumbnail medium large].each do |variant|
-      photo.file.variant(variant).processed
     end
   end
 
