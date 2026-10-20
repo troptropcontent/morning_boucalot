@@ -12,6 +12,9 @@
   },
   "waitFor": "onCreateCommand",
   "updateContentCommand": "bundle install && npm install && cd e2e && npm install",
+  "remoteEnv": {
+    "OP_SERVICE_ACCOUNT_TOKEN": "${localEnv:OP_TOKEN_MORNING_BOUCALOT}"
+  },
   "mounts": [
     "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
   ],

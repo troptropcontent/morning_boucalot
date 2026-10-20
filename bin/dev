@@ -1,5 +1,16 @@
 #!/usr/bin/env sh
 
+# Load development secrets from 1Password (see .env.1password) by re-running
+# this script under `op run`. OP_ENV_LOADED stops it from wrapping twice.
+if [ -z "$OP_ENV_LOADED" ] && [ -f .env.1password ]; then
+  if command -v op >/dev/null 2>&1; then
+    export OP_ENV_LOADED=1
+    exec op run --env-file=.env.1password -- "$0" "$@"
+  else
+    echo "1Password CLI (op) not found; starting without .env.1password secrets." >&2
+  fi
+fi
+
 if ! gem list foreman -i --silent; then
   echo "Installing foreman..."
   gem install foreman
