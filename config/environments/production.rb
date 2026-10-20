@@ -80,8 +80,8 @@ Rails.application.configure do
     enable_starttls_auto: true
   }
   # No fallback on purpose: a wrong/stale default here would silently break
-  # every link in every email. APP_HOST also drives config/deploy.yml's
-  # proxy.host, so the domain lives in one place (see .kamal/secrets).
+  # every link in every email. APP_HOST is set in config/deploy.yml's
+  # env.clear, next to the proxy.host it must match.
   config.action_mailer.default_url_options = { host: ENV.fetch("APP_HOST"), protocol: "https" }
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

@@ -17,7 +17,7 @@ servers:
 # Note: If using Cloudflare, set encryption mode in SSL/TLS setting to "Full" to enable CF-to-app encryption.
 proxy:
   ssl: true
-  host: <%= ENV.fetch("PRODUCTION_APP_HOST") %>
+  host: www.morningboucalot.com
   app_port: 3000
 
 ssh:
@@ -37,7 +37,8 @@ builder:
 env:
   clear:
     RAILS_SERVE_STATIC_FILES: "true"
-    APP_HOST: <%= ENV.fetch("PRODUCTION_APP_HOST") %>
+    # Keep in sync with proxy.host above.
+    APP_HOST: www.morningboucalot.com
     # Where the web/job containers read FTP-offloaded files from. vsftpd
     # runs directly on the VPS (not in Docker) and writes into the host
     # folder bind-mounted below at the same container path — see the FTP

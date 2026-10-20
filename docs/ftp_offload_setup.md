@@ -65,8 +65,9 @@ below.
   proxy at the wrong domain (`thepocman.com` instead of
   `morningboucalot.com`) — caused `ERR_SSL_PROTOCOL_ERROR` on the main
   site right after deploying. Fixed by re-exporting the correct value and
-  redeploying. **Always double check `echo $PRODUCTION_APP_HOST` before
-  deploying** if multiple projects share a shell/VPS.
+  redeploying. Since then, the host is written directly in
+  `config/deploy.yml` (`proxy.host` and `env.clear.APP_HOST`) instead of
+  read from the shell, so this can't recur.
 - `sudo -E` is not supported by this VPS's sudo build — use
   `sudo env VAR=val ... command` instead to pass env vars through sudo.
 - `curl -s https://ifconfig.me` returned an IPv6 address by default,
