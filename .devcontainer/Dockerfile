@@ -19,8 +19,9 @@ RUN curl -fsSL https://downloads.1password.com/linux/keys/1password.asc | \
     apt-get install -y --no-install-recommends 1password-cli && \
     rm -rf /var/lib/apt/lists/*
 
-# Install kamal for deployments
-RUN gem install kamal && chmod -R g+w "$(gem env gemdir)"
+# Install kamal for deployments, then hand the gem dir (GEM_HOME, root-owned in
+# the ruby image) to vscode so `bundle install` can write to it
+RUN gem install kamal && chown -R vscode:vscode "$(gem env gemdir)"
 
 # Pre-create .claude dir so the devcontainer volume mount initializes with correct ownership
 RUN mkdir -p /home/vscode/.claude && chown -R vscode:vscode /home/vscode/.claude
