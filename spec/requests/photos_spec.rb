@@ -23,6 +23,13 @@ RSpec.describe "Photos", type: :request do
         get user_photos_path(user)
         expect(response.body).to include("+ Upload")
       end
+
+      it "offers original, high definition and large in the bulk download menu" do
+        get user_photos_path(user)
+        %w[original full large].each do |variant|
+          expect(response.body).to include(%(data-photo-selection-variant-param="#{variant}"))
+        end
+      end
     end
 
     context "with tags among the owner's photos" do
@@ -105,6 +112,25 @@ RSpec.describe "Photos", type: :request do
     it "hides the rotate buttons from visitors" do
       get user_photo_path(user, photo)
       expect(response.body).not_to include("Rotate left")
+    end
+
+    context "download options" do
+      it "offers the original and web sizes, but no high definition, for an unedited photo" do
+        get user_photo_path(user, photo)
+
+        expect(response.body).to include("Untouched camera file", "Optimised, up to 2400px")
+        expect(response.body).not_to include("High definition")
+        expect(response.body).to include(rails_blob_path(photo.file.blob, disposition: "attachment"))
+      end
+
+      it "adds high definition once the photo is edited" do
+        photo.update!(rotation: 90)
+        get user_photo_path(user, photo)
+
+        expect(response.body).to include("High definition")
+        expect(response.body).to include(rails_representation_path(photo.download(:full), disposition: "attachment"))
+        expect(response.body).to include(rails_representation_path(photo.download(:large), disposition: "attachment"))
+      end
     end
 
     it "shows the rotated image for a rotated photo" do
@@ -441,6 +467,13 @@ RSpec.describe "Photos", type: :request do
         expect(photo.reload.rotation).to eq(90)
       end
 
+      it "refreshes the details so the download links point at the rotated files" do
+        patch rotate_user_photo_path(user, photo), params: { direction: "clockwise" }, headers: turbo_stream
+
+        expect(response.body).to include(%(target="photo_details"))
+        expect(response.body).to include(rails_representation_path(photo.reload.download(:large), disposition: "attachment"))
+      end
+
       it "redirects back to the photo on html format" do
         patch rotate_user_photo_path(user, photo), params: { direction: "counterclockwise" }
 
@@ -501,6 +534,12 @@ RSpec.describe "Photos", type: :request do
 
       it "downloads the large variant when variant=large" do
         post download_zip_user_photos_path(user), params: { photo_ids: photos.map(&:id), variant: "large" }
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to eq("application/zip")
+      end
+
+      it "downloads full-resolution edited files when variant=full" do
+        post download_zip_user_photos_path(user), params: { photo_ids: photos.map(&:id), variant: "full" }
         expect(response).to have_http_status(:ok)
         expect(response.content_type).to eq("application/zip")
       end

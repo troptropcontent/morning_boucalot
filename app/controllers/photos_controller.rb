@@ -139,7 +139,11 @@ class PhotosController < ApplicationController
     respond_to do |format|
       if result.success?
         format.turbo_stream do
-          render turbo_stream: turbo_stream.replace(helpers.dom_id(@photo, :image), partial: "photos/image", locals: { photo: @photo })
+          # Details too: its download links point at the edited variants.
+          render turbo_stream: [
+            turbo_stream.replace(helpers.dom_id(@photo, :image), partial: "photos/image", locals: { photo: @photo }),
+            turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo, owner: @owner, favorited: @photo.favorited_by?(Current.user) })
+          ]
         end
         format.html { redirect_to user_photo_path(@owner, @photo) }
       else

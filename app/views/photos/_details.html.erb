@@ -74,23 +74,15 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
           </svg>
         </div>
-        <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-52 p-2 shadow-lg">
-          <li>
-            <%= link_to rails_blob_path(photo.file, disposition: "attachment"), data: { turbo: false } do %>
-              <div>
-                <span class="font-medium">Original HD</span>
-                <span class="text-xs text-base-content/60 block">Full resolution file</span>
-              </div>
-            <% end %>
-          </li>
-          <li>
-            <%= link_to rails_representation_path(photo.image_variant(:large), disposition: "attachment"), data: { turbo: false } do %>
-              <div>
-                <span class="font-medium">Web / Social</span>
-                <span class="text-xs text-base-content/60 block">Optimised, up to 2400px</span>
-              </div>
-            <% end %>
-          </li>
+        <ul tabindex="0" class="dropdown-content menu bg-base-100 border border-base-300 rounded-box z-10 w-60 p-2 shadow-lg">
+          <%= render "photos/download_option", photo: photo, kind: :original,
+              label: "Original", hint: "Untouched camera file" %>
+          <% if photo.edits.edited? %>
+            <%= render "photos/download_option", photo: photo, kind: :full,
+                label: "High definition", hint: "Full resolution, with your edits" %>
+          <% end %>
+          <%= render "photos/download_option", photo: photo, kind: :large,
+              label: "Web / Social", hint: "Optimised, up to 2400px" %>
         </ul>
       </div>
     <% end %>

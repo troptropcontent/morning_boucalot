@@ -229,6 +229,57 @@ RSpec.describe Photo, type: :model do
     end
   end
 
+  describe "#download" do
+    def operations(variant)
+      variant.variation.transformations.except(:format).to_a
+    end
+
+    it "serves the untouched file blob as the original" do
+      expect(photo.download(:original)).to eq(photo.file.blob)
+    end
+
+    it "serves the original even once edited" do
+      photo.rotation = 90
+      expect(photo.download(:original)).to eq(photo.file.blob)
+    end
+
+    it "serves the original file for high definition while there are no edits" do
+      expect(photo.download(:full)).to eq(photo.file.blob)
+    end
+
+    it "serves a full-resolution variant with the edits for high definition once edited" do
+      photo.rotation = 90
+
+      expect(operations(photo.download(:full))).to eq([ [ :rotate, 90 ], [ :saver, { quality: 95 } ] ])
+    end
+
+    it "serves the large variant, with edits" do
+      photo.rotation = 180
+
+      expect(operations(photo.download(:large))).to eq([ [ :rotate, 180 ], [ :resize_to_limit, [ 2400, 2400 ] ] ])
+    end
+
+    it "accepts the kind as a string" do
+      expect(photo.download("original")).to eq(photo.file.blob)
+    end
+
+    it "raises on an unknown kind" do
+      expect { photo.download(:thumbnail) }.to raise_error(ArgumentError)
+    end
+
+    # libvips drops the orientation tag once it has applied it, but should
+    # carry the rest of the camera metadata into the re-encoded file.
+    it "keeps the camera EXIF in the high definition file" do
+      photo.rotation = 90
+      photo.save!
+
+      exif = photo.download(:full).processed.image.blob.open { |tmp| ExtractExifData.call(tmp.path) }
+
+      expect(exif).to include(camera_model: "FUJIFILM X-E5", iso: 200)
+      expect(exif[:taken_at]).to be_present
+    end
+  end
+
   describe "taken_at defaulting" do
     it "defaults taken_at to now when not provided" do
       photo = FactoryBot.build(:photo, taken_at: nil)

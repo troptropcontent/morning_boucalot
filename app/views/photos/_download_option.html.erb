@@ -1,0 +1,10 @@
+<%# locals: (photo:, kind:, label:, hint:) %>
+<li>
+  <%# rails_blob_path routes variants too, generating them on first request %>
+  <%= link_to rails_blob_path(photo.download(kind), disposition: "attachment"), data: { turbo: false } do %>
+    <div>
+      <span class="font-medium"><%= label %></span>
+      <span class="text-xs text-base-content/60 block"><%= hint %></span>
+    </div>
+  <% end %>
+</li>

@@ -7,8 +7,13 @@ class Photo < ApplicationRecord
   VARIANTS = {
     thumbnail: { resize_to_fill: [ 300, 300 ] },
     medium: { resize_to_limit: [ 800, 600 ] },
-    large: { resize_to_limit: [ 2400, 2400 ] }
+    large: { resize_to_limit: [ 2400, 2400 ] },
+    # Edits only, at full resolution. Generated on first download rather than
+    # warmed: full-size files are large and most photos never need one.
+    full: { saver: { quality: 95 } }
   }.freeze
+
+  DOWNLOADS = %i[original full large].freeze
 
   belongs_to :user
   has_one_attached :file
@@ -27,6 +32,12 @@ class Photo < ApplicationRecord
   # with only `raw_file` if the camera sends the RAF before (or instead of)
   # the JPEG, so at least one of the two is required rather than `file`
   # specifically.
+  #
+  # TODO: raw-only photos are treated as an error state, but nothing enforces
+  # it — they can still be published, and downloads (Photo#download,
+  # DownloadPhotos) assume `file` is attached. Either block publishing until
+  # the JPEG arrives, or model the RAF separately from the photo (e.g. its own
+  # record that a later JPEG gets paired with) so a Photo always has `file`.
   validate :file_or_raw_file_present
   validates :rotation, inclusion: { in: PhotoEdits::ROTATIONS }
 
@@ -61,6 +72,18 @@ class Photo < ApplicationRecord
 
   def image_variant(name)
     file.variant(edits.transformations.merge(VARIANTS.fetch(name)))
+  end
+
+  # What a download of `kind` serves: the stored file when it can go out
+  # as-is, a variant when edits or resizing must be applied. :full falls back
+  # to the original while there are no edits, since re-encoding would only
+  # lose quality.
+  def download(kind)
+    kind = kind.to_sym
+    raise ArgumentError, "Unknown download: #{kind}" unless kind.in?(DOWNLOADS)
+    return file.blob if kind == :original || (kind == :full && !edits.edited?)
+
+    image_variant(kind)
   end
 
   private

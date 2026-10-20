@@ -1,7 +1,7 @@
 require "zip"
 
 class DownloadPhotos < ApplicationService
-  ALLOWED_VARIANTS = %i[original large].freeze
+  ALLOWED_VARIANTS = Photo::DOWNLOADS
 
   def initialize(owner:, photo_ids:, variant: :original)
     @owner = owner
@@ -18,25 +18,20 @@ class DownloadPhotos < ApplicationService
     Zip::OutputStream.write_buffer do |zip|
       name_counts = Hash.new(0)
       photos.each do |photo|
-        entry_name = unique_entry_name(photo, name_counts)
-        zip.put_next_entry(entry_name)
-        open_file(photo) { |tmp| zip.write(tmp.read) }
+        blob = stored_blob(photo.download(@variant))
+        zip.put_next_entry(unique_entry_name(photo, blob, name_counts))
+        blob.open { |tmp| zip.write(tmp.read) }
       end
     end.string
   end
 
   private
 
-  def open_file(photo, &block)
-    if @variant == :original
-      photo.file.blob.open(&block)
-    else
-      photo.image_variant(@variant).processed.image.blob.open(&block)
-    end
+  def stored_blob(download)
+    download.is_a?(ActiveStorage::Blob) ? download : download.processed.image.blob
   end
 
-  def unique_entry_name(photo, counts)
-    blob = photo.file.blob
+  def unique_entry_name(photo, blob, counts)
     ext = File.extname(blob.filename.to_s)
     stem = (photo.title.presence || File.basename(blob.filename.to_s, ext))
                .parameterize(separator: "_")

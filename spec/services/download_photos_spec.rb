@@ -5,6 +5,21 @@ RSpec.describe DownloadPhotos do
   let(:owner) { FactoryBot.create(:user) }
   let!(:photos) { FactoryBot.create_list(:photo, 2, user: owner) }
 
+  def zip_contents(data)
+    contents = {}
+    Zip::InputStream.open(StringIO.new(data)) do |zip|
+      while (entry = zip.get_next_entry)
+        contents[entry.name] = zip.read
+      end
+    end
+    contents
+  end
+
+  def image_size(bytes)
+    image = Vips::Image.new_from_buffer(bytes, "")
+    [ image.width, image.height ]
+  end
+
   def zip_entries(data)
     entries = []
     Zip::InputStream.open(StringIO.new(data)) do |zip|
@@ -54,6 +69,40 @@ RSpec.describe DownloadPhotos do
         result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ], variant: :large)
         expect(result).to be_success
         expect(zip_entries(result.data).size).to eq(1)
+      end
+    end
+
+    context "with variant: :original" do
+      it "stores the untouched file, even for an edited photo" do
+        photo = FactoryBot.create(:photo, user: owner, title: "Tower", rotation: 90)
+        result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ], variant: :original)
+
+        expect(zip_contents(result.data)["tower.jpeg"]).to eq(photo.file.download)
+      end
+    end
+
+    context "with variant: :full" do
+      it "stores the edited image at full resolution" do
+        photo = FactoryBot.create(:photo, user: owner, title: "Tower", rotation: 90)
+        result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ], variant: :full)
+
+        expect(image_size(zip_contents(result.data)["tower.jpeg"])).to eq([ 7728, 5152 ])
+      end
+
+      it "stores the untouched file for an unedited photo" do
+        photo = FactoryBot.create(:photo, user: owner, title: "Tower")
+        result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ], variant: :full)
+
+        expect(zip_contents(result.data)["tower.jpeg"]).to eq(photo.file.download)
+      end
+    end
+
+    context "with variant: :large" do
+      it "stores the edited image" do
+        photo = FactoryBot.create(:photo, user: owner, title: "Tower", rotation: 90)
+        result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ], variant: :large)
+
+        expect(image_size(zip_contents(result.data)["tower.jpeg"])).to eq([ 2400, 1600 ])
       end
     end
 
