@@ -25,14 +25,14 @@ RSpec.describe DownloadPhotos do
     it "names entries using the photo title" do
       photo = FactoryBot.create(:photo, user: owner, title: "Mountain View")
       result = DownloadPhotos.call(owner: owner, photo_ids: [ photo.id ])
-      expect(zip_entries(result.data)).to eq([ "mountain_view.jpg" ])
+      expect(zip_entries(result.data)).to eq([ "mountain_view.jpeg" ])
     end
 
     it "deduplicates entries when photos share the same title" do
       photo1 = FactoryBot.create(:photo, user: owner, title: "Sunset")
       photo2 = FactoryBot.create(:photo, user: owner, title: "Sunset")
       result = DownloadPhotos.call(owner: owner, photo_ids: [ photo1.id, photo2.id ])
-      expect(zip_entries(result.data)).to eq([ "sunset.jpg", "sunset_2.jpg" ])
+      expect(zip_entries(result.data)).to eq([ "sunset.jpeg", "sunset_2.jpeg" ])
     end
 
     it "scopes to the owner's photos and ignores foreign ids" do

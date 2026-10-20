@@ -204,7 +204,7 @@ RSpec.describe "Photos", type: :request do
 
     let(:file) do
       Rack::Test::UploadedFile.new(
-        Rails.root.join("spec/fixtures/files/test_image.jpg"),
+        Rails.root.join("spec/fixtures/files/test_image.jpeg"),
         "image/jpeg"
       )
     end
@@ -243,7 +243,7 @@ RSpec.describe "Photos", type: :request do
 
       it "returns 200 with duplicate status" do
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         post user_photos_path(user),
@@ -255,7 +255,7 @@ RSpec.describe "Photos", type: :request do
 
       it "does not create a new photo" do
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         expect {

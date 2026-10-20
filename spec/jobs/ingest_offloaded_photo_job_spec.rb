@@ -35,7 +35,7 @@ RSpec.describe IngestOffloadedPhotoJob do
 
   describe "#perform" do
     it "hands the file off to IngestOffloadedPhotoFile, creating an unpublished photo" do
-      path = copy_fixture("test_image.jpg", as: "DSCF0001.JPG")
+      path = copy_fixture("test_image.jpeg", as: "DSCF0001.JPG")
 
       expect { described_class.new.perform(path) }.to change { user.photos.count }.by(1)
 
@@ -45,13 +45,13 @@ RSpec.describe IngestOffloadedPhotoJob do
     end
 
     it "deletes the source file once ingestion has run" do
-      path = copy_fixture("test_image.jpg", as: "DSCF0004.JPG")
+      path = copy_fixture("test_image.jpeg", as: "DSCF0004.JPG")
       described_class.new.perform(path)
       expect(File.exist?(path)).to be false
     end
 
     it "deletes the source file even when ingestion fails (e.g. unrecognized extension)" do
-      path = copy_fixture("test_image.jpg", as: "DSCF0015.TXT")
+      path = copy_fixture("test_image.jpeg", as: "DSCF0015.TXT")
 
       expect { described_class.new.perform(path) }.not_to change(Photo, :count)
       expect(File.exist?(path)).to be false
@@ -60,7 +60,7 @@ RSpec.describe IngestOffloadedPhotoJob do
     context "when FTP_INGEST_USER_EMAIL is not configured" do
       it "does nothing and leaves the file in place" do
         ENV["FTP_INGEST_USER_EMAIL"] = nil
-        path = copy_fixture("test_image.jpg", as: "DSCF0014.JPG")
+        path = copy_fixture("test_image.jpeg", as: "DSCF0014.JPG")
 
         expect { described_class.new.perform(path) }.not_to change(Photo, :count)
         expect(File.exist?(path)).to be true
@@ -71,7 +71,7 @@ RSpec.describe IngestOffloadedPhotoJob do
       it "does nothing, guarding against a path-traversal file_path" do
         outside_dir = Dir.mktmpdir
         outside_path = File.join(outside_dir, "DSCF9999.JPG")
-        FileUtils.cp(Rails.root.join("spec/fixtures/files/test_image.jpg"), outside_path)
+        FileUtils.cp(Rails.root.join("spec/fixtures/files/test_image.jpeg"), outside_path)
 
         expect { described_class.new.perform(outside_path) }.not_to change(Photo, :count)
         expect(File.exist?(outside_path)).to be true

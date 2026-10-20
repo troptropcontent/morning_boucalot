@@ -34,7 +34,7 @@ RSpec.describe "OffloadUploads", type: :request do
   describe "POST /offload_uploads" do
     context "without a token" do
       it "returns 401 and creates nothing" do
-        file = upload_fixture("test_image.jpg", as: "DSCF0001.JPG")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0001.JPG")
         expect { post_upload(file, token: nil) }.not_to change(Photo, :count)
         expect(response).to have_http_status(:unauthorized)
       end
@@ -42,7 +42,7 @@ RSpec.describe "OffloadUploads", type: :request do
 
     context "with the wrong token" do
       it "returns 401" do
-        file = upload_fixture("test_image.jpg", as: "DSCF0002.JPG")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0002.JPG")
         post_upload(file, token: "wrong-token")
         expect(response).to have_http_status(:unauthorized)
       end
@@ -51,7 +51,7 @@ RSpec.describe "OffloadUploads", type: :request do
     context "when OFFLOAD_UPLOAD_TOKEN is not configured" do
       it "returns 503 even with a token supplied" do
         ENV["OFFLOAD_UPLOAD_TOKEN"] = nil
-        file = upload_fixture("test_image.jpg", as: "DSCF0003.JPG")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0003.JPG")
         post_upload(file)
         expect(response).to have_http_status(:service_unavailable)
       end
@@ -60,7 +60,7 @@ RSpec.describe "OffloadUploads", type: :request do
     context "when FTP_INGEST_USER_EMAIL has no matching user" do
       it "returns 503" do
         ENV["FTP_INGEST_USER_EMAIL"] = "nobody@example.com"
-        file = upload_fixture("test_image.jpg", as: "DSCF0004.JPG")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0004.JPG")
         post_upload(file)
         expect(response).to have_http_status(:service_unavailable)
       end
@@ -68,7 +68,7 @@ RSpec.describe "OffloadUploads", type: :request do
 
     context "with a valid token" do
       it "creates an unpublished photo and returns 201" do
-        file = upload_fixture("test_image.jpg", as: "DSCF0005.JPG")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0005.JPG")
 
         expect { post_upload(file) }.to change { user.photos.count }.by(1)
 
@@ -79,7 +79,7 @@ RSpec.describe "OffloadUploads", type: :request do
       end
 
       it "pairs a RAF with an existing JPEG of the same stem" do
-        post_upload(upload_fixture("test_image.jpg", as: "DSCF0006.JPG"))
+        post_upload(upload_fixture("test_image.jpeg", as: "DSCF0006.JPG"))
 
         expect {
           post_upload(upload_fixture("test_raw.raf", as: "DSCF0006.RAF", content_type: "application/octet-stream"))
@@ -91,10 +91,10 @@ RSpec.describe "OffloadUploads", type: :request do
       end
 
       it "returns 200 with duplicate status for a repeat checksum" do
-        post_upload(upload_fixture("test_image.jpg", as: "DSCF0007.JPG"))
+        post_upload(upload_fixture("test_image.jpeg", as: "DSCF0007.JPG"))
 
         expect {
-          post_upload(upload_fixture("test_image.jpg", as: "DSCF0007_RETRY.JPG"))
+          post_upload(upload_fixture("test_image.jpeg", as: "DSCF0007_RETRY.JPG"))
         }.not_to change(Photo, :count)
 
         expect(response).to have_http_status(:ok)
@@ -102,7 +102,7 @@ RSpec.describe "OffloadUploads", type: :request do
       end
 
       it "returns 422 for an unsupported file type" do
-        file = upload_fixture("test_image.jpg", as: "DSCF0008.TXT", content_type: "text/plain")
+        file = upload_fixture("test_image.jpeg", as: "DSCF0008.TXT", content_type: "text/plain")
         post_upload(file)
         expect(response).to have_http_status(:unprocessable_entity)
       end

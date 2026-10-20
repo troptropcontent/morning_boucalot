@@ -4,7 +4,7 @@ RSpec.describe UploadPhoto do
   let(:user) { FactoryBot.create(:user) }
   let(:file) do
     Rack::Test::UploadedFile.new(
-      Rails.root.join("spec/fixtures/files/test_image.jpg"),
+      Rails.root.join("spec/fixtures/files/test_image.jpeg"),
       "image/jpeg"
     )
   end
@@ -70,7 +70,7 @@ RSpec.describe UploadPhoto do
 
       it "returns a failure result" do
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         result = UploadPhoto.call(user: user, params: { file: duplicate_file })
@@ -79,7 +79,7 @@ RSpec.describe UploadPhoto do
 
       it "returns a duplicate error" do
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         result = UploadPhoto.call(user: user, params: { file: duplicate_file })
@@ -88,7 +88,7 @@ RSpec.describe UploadPhoto do
 
       it "does not create a new photo" do
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         expect {
@@ -99,7 +99,7 @@ RSpec.describe UploadPhoto do
       it "does not leave an orphaned blob" do
         blob_count_before = ActiveStorage::Blob.count
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         UploadPhoto.call(user: user, params: { file: duplicate_file })
@@ -109,7 +109,7 @@ RSpec.describe UploadPhoto do
       it "allows the same file for a different user" do
         other_user = FactoryBot.create(:user)
         duplicate_file = Rack::Test::UploadedFile.new(
-          Rails.root.join("spec/fixtures/files/test_image.jpg"),
+          Rails.root.join("spec/fixtures/files/test_image.jpeg"),
           "image/jpeg"
         )
         result = UploadPhoto.call(user: other_user, params: { file: duplicate_file })
