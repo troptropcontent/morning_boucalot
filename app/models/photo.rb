@@ -40,6 +40,7 @@ class Photo < ApplicationRecord
   # record that a later JPEG gets paired with) so a Photo always has `file`.
   validate :file_or_raw_file_present
   validates :rotation, inclusion: { in: PhotoEdits::ROTATIONS }
+  validates :straighten_angle, numericality: { in: PhotoEdits::STRAIGHTEN_RANGE }
   validate :crop_within_image
 
   # Photos without EXIF data (or non-JPEGs) never get a taken_at from
@@ -69,7 +70,7 @@ class Photo < ApplicationRecord
 
   def edits
     metadata = file.attached? ? file.blob.metadata : {}
-    PhotoEdits.new(rotation: rotation, crop: crop_box, width: metadata[:width], height: metadata[:height])
+    PhotoEdits.new(rotation: rotation, straighten_angle: straighten_angle, crop: crop_box, width: metadata[:width], height: metadata[:height])
   end
 
   def crop_box
@@ -77,10 +78,10 @@ class Photo < ApplicationRecord
     box if box.all?
   end
 
-  # `uncropped: true` keeps the rotation but not the crop — the image the
-  # crop screen draws on.
-  def image_variant(name, uncropped: false)
-    file.variant(edits.transformations(include_crop: !uncropped).merge(VARIANTS.fetch(name)))
+  # `only_rotation: true` keeps the quarter turns but not the straightening
+  # or crop — the image the crop screen draws on.
+  def image_variant(name, only_rotation: false)
+    file.variant(edits.transformations(only_rotation: only_rotation).merge(VARIANTS.fetch(name)))
   end
 
   # What a download of `kind` serves: the stored file when it can go out

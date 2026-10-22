@@ -37,6 +37,49 @@ RSpec.describe CropPhoto do
       expect(photo.crop_x).to be_nil
     end
 
+    it "stores the straightening angle" do
+      result = described_class.call(photo: photo, box: { x: "0", y: "0", w: "0.5", h: "0.5" }, angle: "-3.25")
+
+      expect(result).to be_success
+      expect(photo.reload.straighten_angle).to eq(-3.25)
+    end
+
+    it "clamps the angle to the allowed range and rounds it to the column's scale" do
+      described_class.call(photo: photo, box: { x: "0", y: "0", w: "1", h: "1" }, angle: "50.123")
+
+      expect(photo.reload.straighten_angle).to eq(45)
+
+      described_class.call(photo: photo, box: { x: "0", y: "0", w: "1", h: "1" }, angle: "1.23456")
+
+      expect(photo.reload.straighten_angle).to eq(1.23)
+    end
+
+    it "straightens without cropping when the box covers the whole straightened image" do
+      described_class.call(photo: photo, box: { x: "0", y: "0", w: "1", h: "1" }, angle: "2")
+
+      expect(photo.reload.crop_box).to be_nil
+      expect(photo.straighten_angle).to eq(2)
+      expect(photo.edits).to be_edited
+    end
+
+    it "keeps the current angle when none is given" do
+      photo.update!(straighten_angle: 4)
+
+      crop(x: "0", y: "0", w: "0.5", h: "0.5")
+
+      expect(photo.reload.straighten_angle).to eq(4)
+    end
+
+    [ "abc", "Infinity", "" ].each do |angle|
+      it "fails on an angle of #{angle.inspect} without changing the photo" do
+        result = described_class.call(photo: photo, box: { x: "0", y: "0", w: "0.5", h: "0.5" }, angle: angle)
+
+        expect(result).to be_failure
+        expect(result.errors).to eq([ "Straightening angle is invalid" ])
+        expect(photo.reload.crop_box).to be_nil
+      end
+    end
+
     it "keeps the rotation" do
       photo.update!(rotation: 90)
 

@@ -152,10 +152,11 @@ class PhotosController < ApplicationController
   end
 
   def update_crop
-    result = CropPhoto.call(photo: @photo, box: params.fetch(:crop, {}).permit(:x, :y, :w, :h))
+    crop = params.fetch(:crop, {}).permit(:x, :y, :w, :h, :angle)
+    result = CropPhoto.call(photo: @photo, box: crop.except(:angle), angle: crop[:angle])
 
     if result.success?
-      redirect_to user_photo_path(@owner, @photo), notice: "Photo cropped.", status: :see_other
+      redirect_to user_photo_path(@owner, @photo), notice: "Photo updated.", status: :see_other
     else
       redirect_to crop_user_photo_path(@owner, @photo), alert: result.errors.join(", "), status: :see_other
     end

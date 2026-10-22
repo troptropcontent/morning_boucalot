@@ -553,14 +553,14 @@ RSpec.describe "Photos", type: :request do
     context "when authenticated as the owner" do
       before { sign_in(user) }
 
-      it "shows the rotated but uncropped image to draw on" do
+      it "shows the rotated but unstraightened, uncropped image to draw on" do
         photo.file.blob.analyze
-        photo.update!(rotation: 90, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5)
+        photo.update!(rotation: 90, straighten_angle: 2, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5)
 
         get crop_user_photo_path(user, photo)
 
         expect(response).to have_http_status(:ok)
-        expect(response.body).to include(photo.image_variant(:large, uncropped: true).variation.key)
+        expect(response.body).to include(photo.image_variant(:large, only_rotation: true).variation.key)
         expect(response.body).not_to include(photo.image_variant(:large).variation.key)
         expect(response.body).to include("cropper")
       end
@@ -571,6 +571,24 @@ RSpec.describe "Photos", type: :request do
         get crop_user_photo_path(user, photo)
 
         expect(response.body).to include(%(data-photo-crop-box-value="[0.1,0.2,0.5,0.25]"))
+      end
+
+      it "starts from the current straightening angle" do
+        photo.update!(straighten_angle: -1.5)
+
+        get crop_user_photo_path(user, photo)
+
+        expect(response.body).to include(%(data-photo-crop-angle-value="-1.5"))
+        expect(response.body).to include(%(type="range"))
+      end
+
+      it "offers keeping the photo's original ratio first, as the default" do
+        get crop_user_photo_path(user, photo)
+
+        ratios = Nokogiri::HTML(response.body).css("[data-photo-crop-target=ratio]")
+        expect(ratios.first["data-photo-crop-ratio-param"]).to eq("original")
+        expect(ratios.first["aria-pressed"]).to eq("true")
+        expect(ratios.drop(1).map { |button| button["aria-pressed"] }).to all(eq("false"))
       end
 
       it "starts from no crop for an uncropped photo" do
@@ -604,8 +622,16 @@ RSpec.describe "Photos", type: :request do
 
         expect(response).to redirect_to(user_photo_path(user, photo))
         expect(response).to have_http_status(:see_other)
-        expect(flash[:notice]).to eq("Photo cropped.")
+        expect(flash[:notice]).to eq("Photo updated.")
         expect(photo.reload.crop_box).to eq([ 0.1, 0.2, 0.5, 0.25 ])
+      end
+
+      it "saves the straightening angle along with the crop" do
+        patch crop_user_photo_path(user, photo), params: { crop: box[:crop].merge(angle: "2.5") }
+
+        expect(response).to redirect_to(user_photo_path(user, photo))
+        expect(photo.reload.straighten_angle).to eq(2.5)
+        expect(photo.crop_box).to eq([ 0.1, 0.2, 0.5, 0.25 ])
       end
 
       it "goes back to the crop screen with an alert on an invalid box" do

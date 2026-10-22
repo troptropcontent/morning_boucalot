@@ -32,6 +32,19 @@ RSpec.describe Photo, type: :model do
       expect(photo.errors[:rotation]).to be_present
     end
 
+    it "accepts straightening angles up to 45° either way" do
+      [ -45, -0.5, 0, 12.25, 45 ].each do |angle|
+        photo.straighten_angle = angle
+        expect(photo).to be_valid
+      end
+    end
+
+    it "rejects straightening past 45°" do
+      photo.straighten_angle = 45.5
+      expect(photo).not_to be_valid
+      expect(photo.errors[:straighten_angle]).to be_present
+    end
+
     it "is valid with only a raw_file attached" do
       photo.file.detach
       photo.raw_file.attach(io: File.open(Rails.root.join("spec/fixtures/files/test_raw.raf")), filename: "test_raw.raf")
@@ -185,6 +198,11 @@ RSpec.describe Photo, type: :model do
       expect(photo.edits.dimensions).to eq([ 7728, 5152 ])
     end
 
+    it "carries the straightening angle" do
+      photo.straighten_angle = -3.5
+      expect(photo.edits.straighten_angle).to eq(-3.5)
+    end
+
     it "carries the crop box" do
       photo.assign_attributes(crop_x: 0.1, crop_y: 0.2, crop_w: 0.5, crop_h: 0.4)
       expect(photo.edits.crop).to eq([ 0.1, 0.2, 0.5, 0.4 ])
@@ -278,10 +296,27 @@ RSpec.describe Photo, type: :model do
         expect(operations(photo.image_variant(:large)).first(2)).to eq([ [ :rotate, 90 ], [ :crop, [ 3864, 1288, 3864, 2576 ] ] ])
       end
 
-      it "leaves the crop out when asked for the uncropped image" do
-        photo.update!(rotation: 90)
+      it "leaves the straightening and crop out when asked for the rotation only" do
+        photo.update!(rotation: 90, straighten_angle: 2)
 
-        expect(operations(photo.image_variant(:large, uncropped: true))).to eq([ [ :rotate, 90 ], [ :resize_to_limit, [ 2400, 2400 ] ] ])
+        expect(operations(photo.image_variant(:large, only_rotation: true))).to eq([ [ :rotate, 90 ], [ :resize_to_limit, [ 2400, 2400 ] ] ])
+      end
+
+      it "straightens in the same rotation, then crops within the straightened area" do
+        photo.update!(straighten_angle: -2.5)
+
+        rotate, crop = operations(photo.image_variant(:large)).first(2)
+        expect(rotate).to eq([ :rotate, -2.5 ])
+        expect(crop.first).to eq(:crop)
+        expect(crop.last).to eq(photo.edits.transformations[:crop])
+      end
+
+      it "actually straightens the generated image without dark corners" do
+        photo.update!(straighten_angle: 5, crop_x: nil, crop_y: nil, crop_w: nil, crop_h: nil)
+
+        image = Vips::Image.new_from_buffer(photo.image_variant(:medium).processed.download, "")
+        corners = [ [ 0, 0 ], [ image.width - 4, 0 ], [ 0, image.height - 4 ], [ image.width - 4, image.height - 4 ] ]
+        expect(corners.map { |x, y| image.crop(x, y, 4, 4).avg }).to all(be > 40)
       end
 
       it "actually crops the generated image" do

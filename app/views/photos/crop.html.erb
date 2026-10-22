@@ -5,22 +5,38 @@
 </div>
 
 <%= tag.div class: "max-w-3xl mx-auto space-y-4",
-    data: { controller: "photo-crop", photo_crop_box_value: (@photo.crop_box&.map(&:to_f) || []).to_json } do %>
-  <h1 class="text-xl font-bold">Crop photo</h1>
+    data: { controller: "photo-crop",
+            photo_crop_box_value: (@photo.crop_box&.map(&:to_f) || []).to_json,
+            photo_crop_angle_value: @photo.straighten_angle.to_f } do %>
+  <h1 class="text-xl font-bold">Crop &amp; straighten</h1>
 
   <%# Cropper.js sizes itself to this box, so it needs a bounded height. %>
   <div class="bg-base-300 rounded-lg overflow-hidden h-[60vh]">
-    <%= image_tag @photo.image_variant(:large, uncropped: true),
+    <%= image_tag @photo.image_variant(:large, only_rotation: true),
         alt: @photo.title.presence || "Photo",
         class: "block max-w-full",
         data: { photo_crop_target: "image" } %>
   </div>
 
+  <div class="flex items-center gap-3">
+    <label for="straighten_angle" class="text-sm font-medium shrink-0">Straighten</label>
+    <input type="range" id="straighten_angle"
+           min="<%= PhotoEdits::STRAIGHTEN_RANGE.min %>" max="<%= PhotoEdits::STRAIGHTEN_RANGE.max %>" step="0.1"
+           value="<%= @photo.straighten_angle.to_f %>"
+           class="range range-primary range-sm flex-1"
+           data-photo-crop-target="slider"
+           data-action="photo-crop#straighten">
+    <output for="straighten_angle" class="w-14 text-right text-sm tabular-nums" data-photo-crop-target="angleLabel"></output>
+    <button type="button" class="btn btn-ghost btn-sm" data-action="photo-crop#level" aria-label="Reset straightening">0°</button>
+  </div>
+
   <div class="join w-full" role="group" aria-label="Aspect ratio">
-    <% { "Free" => 0, "1:1" => 1, "4:5" => 0.8, "16:9" => 16.0 / 9 }.each do |label, ratio| %>
+    <%# "original" is the photo's own ratio, measured in the browser. It's the
+        default, so it comes first; see the controller's #restore. %>
+    <% { "Original" => "original", "Free" => 0, "1:1" => 1, "4:5" => 0.8, "16:9" => 16.0 / 9 }.each do |label, ratio| %>
       <button type="button"
-              class="btn join-item flex-1 <%= "btn-active" if ratio.zero? %>"
-              aria-pressed="<%= ratio.zero? %>"
+              class="btn join-item flex-1 px-1 <%= "btn-active" if ratio == "original" %>"
+              aria-pressed="<%= ratio == "original" %>"
               data-action="photo-crop#setRatio"
               data-photo-crop-ratio-param="<%= ratio %>"
               data-photo-crop-target="ratio"><%= label %></button>
@@ -28,7 +44,7 @@
   </div>
 
   <%= form_with url: crop_user_photo_path(@owner, @photo), method: :patch, scope: :crop, class: "flex gap-2" do |f| %>
-    <% %i[x y w h].each do |field| %>
+    <% %i[x y w h angle].each do |field| %>
       <%= f.hidden_field field, data: { photo_crop_target: field } %>
     <% end %>
     <%= f.submit "Save", class: "btn btn-primary flex-1" %>

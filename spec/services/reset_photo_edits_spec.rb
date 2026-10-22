@@ -1,7 +1,7 @@
 require "rails_helper"
 
 RSpec.describe ResetPhotoEdits do
-  let(:photo) { FactoryBot.create(:photo, rotation: 90, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5) }
+  let(:photo) { FactoryBot.create(:photo, rotation: 90, straighten_angle: 3, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5) }
 
   describe ".call" do
     it "returns the photo to its original, unedited state" do
@@ -10,6 +10,7 @@ RSpec.describe ResetPhotoEdits do
       expect(result).to be_success
       photo.reload
       expect(photo.rotation).to eq(0)
+      expect(photo.straighten_angle).to eq(0)
       expect(photo.crop_box).to be_nil
       expect(photo.edits).not_to be_edited
     end

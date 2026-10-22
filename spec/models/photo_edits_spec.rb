@@ -25,8 +25,38 @@ RSpec.describe PhotoEdits do
       expect(steps.keys).to eq(%i[rotate crop])
     end
 
-    it "leaves the crop out with include_crop: false" do
-      expect(edits(rotation: 90, crop: [ 0, 0, 0.5, 0.5 ]).transformations(include_crop: false)).to eq(rotate: 90)
+    it "keeps only the quarter turns with only_rotation: true" do
+      steps = edits(rotation: 90, straighten_angle: 3, crop: [ 0, 0, 0.5, 0.5 ]).transformations(only_rotation: true)
+
+      expect(steps).to eq(rotate: 90)
+    end
+
+    it "is empty with only_rotation: true for a photo that isn't turned" do
+      expect(edits(straighten_angle: 3).transformations(only_rotation: true)).to eq({})
+    end
+
+    context "when straightened" do
+      # 4000x3000 tilted 10° needs a 4460x3649 canvas; the largest 4:3
+      # rectangle inside the tilted image is 3288x2466 (scale 0.822), less
+      # the 2px inset on each side, centered on that canvas.
+      it "rotates by the angle and crops away the empty corners" do
+        expect(edits(straighten_angle: 10).transformations).to eq(rotate: 10.0, crop: [ 588, 594, 3284, 2462 ])
+      end
+
+      it "crops the same area whichever way it tilts" do
+        expect(edits(straighten_angle: -10).transformations).to eq(rotate: -10.0, crop: [ 588, 594, 3284, 2462 ])
+      end
+
+      it "folds the quarter turns into the same rotation" do
+        expect(edits(rotation: 90, straighten_angle: 10).transformations).to eq(rotate: 100.0, crop: [ 594, 588, 2462, 3284 ])
+      end
+
+      it "measures the user's crop against the straightened area" do
+        steps = edits(straighten_angle: 10, crop: [ 0.5, 0.5, 0.5, 0.5 ]).transformations
+
+        expect(steps).to eq(rotate: 10.0, crop: [ 588 + 1642, 594 + 1231, 1642, 1231 ])
+        expect(steps.keys).to eq(%i[rotate crop])
+      end
     end
 
     it "keeps rounded crops inside the image" do
@@ -47,6 +77,10 @@ RSpec.describe PhotoEdits do
       expect(edits(rotation: 180)).to be_edited
     end
 
+    it "is true once straightened" do
+      expect(edits(straighten_angle: -0.5)).to be_edited
+    end
+
     it "is true once cropped" do
       expect(edits(crop: [ 0, 0, 0.5, 0.5 ])).to be_edited
     end
@@ -62,6 +96,10 @@ RSpec.describe PhotoEdits do
       it "is #{expected.join("x")} for a 4000x3000 original rotated #{rotation}°" do
         expect(edits(rotation: rotation).dimensions).to eq(expected)
       end
+    end
+
+    it "is the straightened area's size once straightened" do
+      expect(edits(straighten_angle: 10).dimensions).to eq([ 3284, 2462 ])
     end
 
     it "is the crop's size once cropped" do
