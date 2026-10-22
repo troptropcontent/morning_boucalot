@@ -1,0 +1,38 @@
+<% content_for :head, stylesheet_link_tag("cropper", "data-turbo-track": "reload") %>
+
+<div class="mb-4">
+  <%= link_to "← Back to photo", user_photo_path(@owner, @photo), class: "link link-primary text-sm" %>
+</div>
+
+<%= tag.div class: "max-w-3xl mx-auto space-y-4",
+    data: { controller: "photo-crop", photo_crop_box_value: (@photo.crop_box&.map(&:to_f) || []).to_json } do %>
+  <h1 class="text-xl font-bold">Crop photo</h1>
+
+  <%# Cropper.js sizes itself to this box, so it needs a bounded height. %>
+  <div class="bg-base-300 rounded-lg overflow-hidden h-[60vh]">
+    <%= image_tag @photo.image_variant(:large, uncropped: true),
+        alt: @photo.title.presence || "Photo",
+        class: "block max-w-full",
+        data: { photo_crop_target: "image" } %>
+  </div>
+
+  <div class="join w-full" role="group" aria-label="Aspect ratio">
+    <% { "Free" => 0, "1:1" => 1, "4:5" => 0.8, "16:9" => 16.0 / 9 }.each do |label, ratio| %>
+      <button type="button"
+              class="btn join-item flex-1 <%= "btn-active" if ratio.zero? %>"
+              aria-pressed="<%= ratio.zero? %>"
+              data-action="photo-crop#setRatio"
+              data-photo-crop-ratio-param="<%= ratio %>"
+              data-photo-crop-target="ratio"><%= label %></button>
+    <% end %>
+  </div>
+
+  <%= form_with url: crop_user_photo_path(@owner, @photo), method: :patch, scope: :crop, class: "flex gap-2" do |f| %>
+    <% %i[x y w h].each do |field| %>
+      <%= f.hidden_field field, data: { photo_crop_target: field } %>
+    <% end %>
+    <%= f.submit "Save", class: "btn btn-primary flex-1" %>
+    <button type="button" class="btn btn-outline" data-action="photo-crop#reset">Reset</button>
+    <%= link_to "Cancel", user_photo_path(@owner, @photo), class: "btn btn-ghost" %>
+  <% end %>
+<% end %>

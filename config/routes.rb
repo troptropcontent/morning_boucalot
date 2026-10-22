@@ -14,6 +14,9 @@ Rails.application.routes.draw do
       member do
         patch :favorite
         patch :rotate
+        get :crop
+        patch :crop, action: :update_crop
+        delete :edits, action: :reset_edits
       end
       collection do
         get :upload

@@ -1,6 +1,8 @@
 <%# locals: (photo:, owner:, direction:) %>
 <% label = direction == "clockwise" ? "Rotate right" : "Rotate left" %>
+<% confirm = "Rotating removes the crop. Continue?" if photo.edits.cropped? %>
 <%= button_to rotate_user_photo_path(owner, photo), method: :patch, params: { direction: direction },
+    form: { data: { turbo_confirm: confirm } },
     class: "btn btn-outline btn-sm btn-square", title: label, aria: { label: label } do %>
   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 <%= "-scale-x-100" if direction == "counterclockwise" %>" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 11a8 8 0 1 0-2.34 5.66M20 4v7h-7" />

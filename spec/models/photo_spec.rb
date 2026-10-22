@@ -176,11 +176,66 @@ RSpec.describe Photo, type: :model do
   end
 
   describe "#edits" do
-    it "builds edits from the photo's rotation and original dimensions" do
+    it "uses the analyzed image's dimensions, not the EXIF columns" do
+      photo.save!
+      photo.file.blob.analyze
       photo.assign_attributes(rotation: 90, width: 4000, height: 3000)
 
       expect(photo.edits.rotation).to eq(90)
-      expect(photo.edits.dimensions).to eq([ 3000, 4000 ])
+      expect(photo.edits.dimensions).to eq([ 7728, 5152 ])
+    end
+
+    it "carries the crop box" do
+      photo.assign_attributes(crop_x: 0.1, crop_y: 0.2, crop_w: 0.5, crop_h: 0.4)
+      expect(photo.edits.crop).to eq([ 0.1, 0.2, 0.5, 0.4 ])
+    end
+  end
+
+  describe "#crop_box" do
+    it "is nil without a crop" do
+      expect(photo.crop_box).to be_nil
+    end
+
+    it "is nil while the crop is incomplete" do
+      photo.crop_x = 0.1
+      expect(photo.crop_box).to be_nil
+    end
+  end
+
+  describe "crop validation" do
+    def crop(x, y, w, h)
+      photo.assign_attributes(crop_x: x, crop_y: y, crop_w: w, crop_h: h)
+      photo
+    end
+
+    it "accepts no crop" do
+      expect(crop(nil, nil, nil, nil)).to be_valid
+    end
+
+    it "accepts a box inside the image, up to its edges" do
+      expect(crop(0.25, 0.5, 0.75, 0.5)).to be_valid
+    end
+
+    it "rejects a partial crop" do
+      expect(crop(0.1, 0.1, nil, nil)).not_to be_valid
+      expect(photo.errors[:base]).to include("Crop needs a position and a size")
+    end
+
+    it "rejects a box past the right edge" do
+      expect(crop(0.5, 0, 0.6, 1)).not_to be_valid
+      expect(photo.errors[:base]).to include("Crop must lie within the image")
+    end
+
+    it "rejects a box past the bottom edge" do
+      expect(crop(0, 0.5, 1, 0.6)).not_to be_valid
+    end
+
+    it "rejects a negative position" do
+      expect(crop(-0.1, 0, 0.5, 0.5)).not_to be_valid
+    end
+
+    it "rejects an empty box" do
+      expect(crop(0, 0, 0, 0.5)).not_to be_valid
     end
   end
 
@@ -204,6 +259,37 @@ RSpec.describe Photo, type: :model do
       photo.rotation = 90
 
       expect(operations(photo.image_variant(:thumbnail))).to eq([ [ :rotate, 90 ], [ :resize_to_fill, [ 300, 300 ] ] ])
+    end
+
+    context "when cropped" do
+      before do
+        photo.save!
+        photo.file.blob.analyze
+        photo.update!(crop_x: 0.5, crop_y: 0.25, crop_w: 0.5, crop_h: 0.5)
+      end
+
+      it "crops in pixels of the original before resizing" do
+        expect(operations(photo.image_variant(:large))).to eq([ [ :crop, [ 2576, 1932, 2576, 3864 ] ], [ :resize_to_limit, [ 2400, 2400 ] ] ])
+      end
+
+      it "crops after rotating, in pixels of the rotated image" do
+        photo.update!(rotation: 90)
+
+        expect(operations(photo.image_variant(:large)).first(2)).to eq([ [ :rotate, 90 ], [ :crop, [ 3864, 1288, 3864, 2576 ] ] ])
+      end
+
+      it "leaves the crop out when asked for the uncropped image" do
+        photo.update!(rotation: 90)
+
+        expect(operations(photo.image_variant(:large, uncropped: true))).to eq([ [ :rotate, 90 ], [ :resize_to_limit, [ 2400, 2400 ] ] ])
+      end
+
+      it "actually crops the generated image" do
+        image = photo.image_variant(:medium).processed.image
+        image.analyze
+        # 2576x3864 fitted into 800x600 by height.
+        expect(image.metadata.values_at(:width, :height)).to eq([ 400, 600 ])
+      end
     end
 
     it "produces a distinct variant per rotation" do

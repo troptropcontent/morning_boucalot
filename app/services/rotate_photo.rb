@@ -12,9 +12,11 @@ class RotatePhoto < ApplicationService
     fail!([ "Only photos with an image file can be rotated" ]) unless @photo.file.attached?
 
     # Locked so two quick taps both land (0 → 90 → 180) instead of each
-    # reading 0 and writing 90.
+    # reading 0 and writing 90. The crop was drawn on the old orientation,
+    # so it no longer means anything and is cleared.
     @photo.with_lock do
-      fail!(@photo.errors.full_messages) unless @photo.update(rotation: (@photo.rotation + step) % 360)
+      rotation = (@photo.rotation + step) % 360
+      fail!(@photo.errors.full_messages) unless @photo.update(rotation: rotation, crop_x: nil, crop_y: nil, crop_w: nil, crop_h: nil)
     end
     WarmPhotoVariantsJob.perform_later(@photo.id)
 

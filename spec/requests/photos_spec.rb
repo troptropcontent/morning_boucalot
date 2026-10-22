@@ -109,6 +109,35 @@ RSpec.describe "Photos", type: :request do
       expect(response.body).to include(%(aria-label="Rotate left"), %(aria-label="Rotate right"))
     end
 
+    it "shows the crop link to the owner, and reset only once edited" do
+      sign_in(user)
+      get user_photo_path(user, photo)
+      expect(response.body).to include(crop_user_photo_path(user, photo))
+      expect(response.body).not_to include("Reset edits")
+
+      photo.update!(rotation: 90)
+      get user_photo_path(user, photo)
+      expect(response.body).to include("Reset edits")
+    end
+
+    it "warns before rotating a cropped photo" do
+      sign_in(user)
+      photo.update!(crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5)
+      get user_photo_path(user, photo)
+      expect(response.body).to include("Rotating removes the crop. Continue?")
+    end
+
+    it "doesn't warn before rotating an uncropped photo" do
+      sign_in(user)
+      get user_photo_path(user, photo)
+      expect(response.body).not_to include("Rotating removes the crop")
+    end
+
+    it "hides the edit controls from visitors" do
+      get user_photo_path(user, photo)
+      expect(response.body).not_to include(crop_user_photo_path(user, photo))
+    end
+
     it "hides the rotate buttons from visitors" do
       get user_photo_path(user, photo)
       expect(response.body).not_to include("Rotate left")
@@ -515,6 +544,120 @@ RSpec.describe "Photos", type: :request do
         expect(response).to redirect_to(new_session_path)
         expect(photo.reload.rotation).to eq(0)
       end
+    end
+  end
+
+  describe "GET /:user_id/photos/:id/crop" do
+    let(:photo) { FactoryBot.create(:photo, user: user) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "shows the rotated but uncropped image to draw on" do
+        photo.file.blob.analyze
+        photo.update!(rotation: 90, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5)
+
+        get crop_user_photo_path(user, photo)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(photo.image_variant(:large, uncropped: true).variation.key)
+        expect(response.body).not_to include(photo.image_variant(:large).variation.key)
+        expect(response.body).to include("cropper")
+      end
+
+      it "starts from the current crop" do
+        photo.update!(crop_x: 0.1, crop_y: 0.2, crop_w: 0.5, crop_h: 0.25)
+
+        get crop_user_photo_path(user, photo)
+
+        expect(response.body).to include(%(data-photo-crop-box-value="[0.1,0.2,0.5,0.25]"))
+      end
+
+      it "starts from no crop for an uncropped photo" do
+        get crop_user_photo_path(user, photo)
+
+        expect(response.body).to include(%(data-photo-crop-box-value="[]"))
+      end
+    end
+
+    it "is forbidden to another user" do
+      sign_in(FactoryBot.create(:user))
+      get crop_user_photo_path(user, photo)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "redirects visitors to login" do
+      get crop_user_photo_path(user, photo)
+      expect(response).to redirect_to(new_session_path)
+    end
+  end
+
+  describe "PATCH /:user_id/photos/:id/crop" do
+    let(:photo) { FactoryBot.create(:photo, user: user) }
+    let(:box) { { crop: { x: "0.1", y: "0.2", w: "0.5", h: "0.25" } } }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "saves the crop and goes back to the photo" do
+        patch crop_user_photo_path(user, photo), params: box
+
+        expect(response).to redirect_to(user_photo_path(user, photo))
+        expect(response).to have_http_status(:see_other)
+        expect(flash[:notice]).to eq("Photo cropped.")
+        expect(photo.reload.crop_box).to eq([ 0.1, 0.2, 0.5, 0.25 ])
+      end
+
+      it "goes back to the crop screen with an alert on an invalid box" do
+        patch crop_user_photo_path(user, photo), params: { crop: { x: "0", y: "0", w: "0", h: "0" } }
+
+        expect(response).to redirect_to(crop_user_photo_path(user, photo))
+        expect(flash[:alert]).to eq("Crop is missing or invalid")
+        expect(photo.reload.crop_box).to be_nil
+      end
+
+      it "fails cleanly without a box" do
+        patch crop_user_photo_path(user, photo)
+
+        expect(response).to redirect_to(crop_user_photo_path(user, photo))
+      end
+    end
+
+    it "is forbidden to another user" do
+      sign_in(FactoryBot.create(:user))
+      patch crop_user_photo_path(user, photo), params: box
+      expect(response).to have_http_status(:forbidden)
+      expect(photo.reload.crop_box).to be_nil
+    end
+  end
+
+  describe "DELETE /:user_id/photos/:id/edits" do
+    let(:photo) { FactoryBot.create(:photo, user: user, rotation: 90, crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5) }
+
+    context "when authenticated as the owner" do
+      before { sign_in(user) }
+
+      it "resets the edits and refreshes the image and details via turbo stream" do
+        delete edits_user_photo_path(user, photo), headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(%(target="image_photo_#{photo.id}"), %(target="photo_details"))
+        expect(photo.reload.edits).not_to be_edited
+      end
+
+      it "redirects back to the photo on html format" do
+        delete edits_user_photo_path(user, photo)
+
+        expect(response).to redirect_to(user_photo_path(user, photo))
+        expect(photo.reload.edits).not_to be_edited
+      end
+    end
+
+    it "is forbidden to another user" do
+      sign_in(FactoryBot.create(:user))
+      delete edits_user_photo_path(user, photo)
+      expect(response).to have_http_status(:forbidden)
+      expect(photo.reload.rotation).to eq(90)
     end
   end
 

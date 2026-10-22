@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_20_120912) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_20_155004) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.datetime "created_at", null: false
@@ -75,6 +75,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_20_120912) do
     t.datetime "archived_at"
     t.string "camera_model"
     t.datetime "created_at", null: false
+    t.decimal "crop_h", precision: 7, scale: 6
+    t.decimal "crop_w", precision: 7, scale: 6
+    t.decimal "crop_x", precision: 7, scale: 6
+    t.decimal "crop_y", precision: 7, scale: 6
     t.text "description"
     t.integer "file_size"
     t.decimal "focal_length", precision: 8, scale: 2

@@ -1,8 +1,8 @@
 class PhotosController < ApplicationController
   before_action :set_owner
-  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch batch_destroy rotate]
+  before_action :require_gallery_owner!, only: %i[new upload create edit update destroy batch batch_destroy rotate crop update_crop reset_edits]
   before_action :require_gallery_viewer!, only: %i[download_zip]
-  before_action :set_photo, only: %i[show edit update destroy favorite rotate]
+  before_action :set_photo, only: %i[show edit update destroy favorite rotate crop update_crop reset_edits]
   before_action :set_filter, only: %i[index show edit]
   allow_unauthenticated_access only: %i[index show]
 
@@ -138,19 +138,35 @@ class PhotosController < ApplicationController
 
     respond_to do |format|
       if result.success?
-        format.turbo_stream do
-          # Details too: its download links point at the edited variants.
-          render turbo_stream: [
-            turbo_stream.replace(helpers.dom_id(@photo, :image), partial: "photos/image", locals: { photo: @photo }),
-            turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo, owner: @owner, favorited: @photo.favorited_by?(Current.user) })
-          ]
-        end
+        format.turbo_stream { render_edited_photo }
         format.html { redirect_to user_photo_path(@owner, @photo) }
       else
         alert = result.errors.join(", ")
         format.turbo_stream { render turbo_stream: turbo_stream.update("flash", partial: "layouts/flash", locals: { notice: nil, alert: alert }), status: :unprocessable_entity }
         format.html { redirect_to user_photo_path(@owner, @photo), alert: alert }
       end
+    end
+  end
+
+  def crop
+  end
+
+  def update_crop
+    result = CropPhoto.call(photo: @photo, box: params.fetch(:crop, {}).permit(:x, :y, :w, :h))
+
+    if result.success?
+      redirect_to user_photo_path(@owner, @photo), notice: "Photo cropped.", status: :see_other
+    else
+      redirect_to crop_user_photo_path(@owner, @photo), alert: result.errors.join(", "), status: :see_other
+    end
+  end
+
+  def reset_edits
+    ResetPhotoEdits.call(photo: @photo)
+
+    respond_to do |format|
+      format.turbo_stream { render_edited_photo }
+      format.html { redirect_to user_photo_path(@owner, @photo), status: :see_other }
     end
   end
 
@@ -196,6 +212,15 @@ class PhotosController < ApplicationController
 
   def photo_params
     params.require(:photo).permit(:file, :title, :description, :tag_list)
+  end
+
+  # Details too, not just the image: its download links point at the
+  # edited variants.
+  def render_edited_photo
+    render turbo_stream: [
+      turbo_stream.replace(helpers.dom_id(@photo, :image), partial: "photos/image", locals: { photo: @photo }),
+      turbo_stream.update("photo_details", partial: "photos/details", locals: { photo: @photo, owner: @owner, favorited: @photo.favorited_by?(Current.user) })
+    ]
   end
 
   def favorited_photo_ids_for(photos)

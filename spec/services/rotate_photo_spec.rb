@@ -42,6 +42,14 @@ RSpec.describe RotatePhoto do
       expect(photo.reload.rotation).to eq(180)
     end
 
+    it "clears the crop, which was drawn on the old orientation" do
+      photo.update!(crop_x: 0, crop_y: 0, crop_w: 0.5, crop_h: 0.5)
+
+      described_class.call(photo: photo, direction: "clockwise")
+
+      expect(photo.reload.crop_box).to be_nil
+    end
+
     it "returns the photo" do
       expect(described_class.call(photo: photo, direction: "clockwise").data).to eq(photo)
     end

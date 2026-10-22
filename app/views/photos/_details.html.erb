@@ -91,6 +91,12 @@
       <% if photo.file.attached? %>
         <%= render "photos/rotate_button", photo: photo, owner: owner, direction: "counterclockwise" %>
         <%= render "photos/rotate_button", photo: photo, owner: owner, direction: "clockwise" %>
+        <%= link_to "Crop", crop_user_photo_path(owner, photo), class: "btn btn-outline btn-sm", data: { turbo_frame: "_top" } %>
+        <% if photo.edits.edited? %>
+          <%= button_to "Reset edits", edits_user_photo_path(owner, photo), method: :delete,
+              form: { data: { turbo_confirm: "Undo all rotation and cropping on this photo?" } },
+              class: "btn btn-ghost btn-sm" %>
+        <% end %>
       <% end %>
       <%= button_to "Move to trash", user_photo_path(owner, photo), method: :delete,
           data: { turbo_confirm: "Move this photo to trash?", turbo_frame: "_top" },

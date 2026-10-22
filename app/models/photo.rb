@@ -40,6 +40,7 @@ class Photo < ApplicationRecord
   # record that a later JPEG gets paired with) so a Photo always has `file`.
   validate :file_or_raw_file_present
   validates :rotation, inclusion: { in: PhotoEdits::ROTATIONS }
+  validate :crop_within_image
 
   # Photos without EXIF data (or non-JPEGs) never get a taken_at from
   # ProcessPhotoJob, so we default it to the upload time. This keeps taken_at
@@ -67,11 +68,19 @@ class Photo < ApplicationRecord
   end
 
   def edits
-    PhotoEdits.new(rotation: rotation, width: width, height: height)
+    metadata = file.attached? ? file.blob.metadata : {}
+    PhotoEdits.new(rotation: rotation, crop: crop_box, width: metadata[:width], height: metadata[:height])
   end
 
-  def image_variant(name)
-    file.variant(edits.transformations.merge(VARIANTS.fetch(name)))
+  def crop_box
+    box = [ crop_x, crop_y, crop_w, crop_h ]
+    box if box.all?
+  end
+
+  # `uncropped: true` keeps the rotation but not the crop — the image the
+  # crop screen draws on.
+  def image_variant(name, uncropped: false)
+    file.variant(edits.transformations(include_crop: !uncropped).merge(VARIANTS.fetch(name)))
   end
 
   # What a download of `kind` serves: the stored file when it can go out
@@ -87,6 +96,16 @@ class Photo < ApplicationRecord
   end
 
   private
+
+  def crop_within_image
+    box = [ crop_x, crop_y, crop_w, crop_h ]
+    return if box.none?
+    return errors.add(:base, "Crop needs a position and a size") unless box.all?
+
+    x, y, w, h = box
+    inside = x >= 0 && y >= 0 && w.positive? && h.positive? && x + w <= 1 && y + h <= 1
+    errors.add(:base, "Crop must lie within the image") unless inside
+  end
 
   def file_or_raw_file_present
     errors.add(:file, :blank) unless file.attached? || raw_file.attached?
